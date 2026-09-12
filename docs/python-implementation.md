@@ -96,11 +96,8 @@ python -m fuzz.drivers.rational --cases 1000 --seed 20260911
 python -m fuzz.drivers.float --mode lean-python --cases 1000 --seed 20260911
 ```
 
-For development, `make format-python`, `make format-check-python`, and
-`make lint-python` use Ruff 0.16.7, pinned in the `dev` extra. These targets install
-the extra into `.venv/` automatically. Formatting also sorts imports; linting
-checks import order, unused or undefined names, and basic Python errors.
-`make test-python` builds the Lean and Rust oracles and runs the Python regression suite.
+See the [development guide](development.md) for Ruff setup, formatting and linting,
+and the `make test-python` target that builds the required Lean/Rust oracles.
 
 The two fuzz commands compare Python with Lean without requiring Rust. For the
 full regression suite, build the Rust oracle as well:

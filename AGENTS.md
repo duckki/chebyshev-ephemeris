@@ -148,10 +148,11 @@
   only when the user requests it. After a commit, stop for review before the next
   slice unless the user has explicitly authorized continuing.
 
-- Keep visitor/reviewer documentation in five guides directly under `docs/`:
+- Keep visitor/reviewer documentation in six guides directly under `docs/`:
   `paper-and-spec.md`, `lean-implementation.md`, `python-implementation.md`,
-  `rust-implementation.md`, and `fuzzing.md`. These extend the root README review
-  path. Put supporting research and estimates under `docs/references/`.
+  `rust-implementation.md`, `fuzzing.md`, and `development.md`. Keep the root README
+  a concise public introduction; put detailed setup, formatting, linting, and test
+  commands in `development.md`. Put supporting research and estimates under `docs/references/`.
   Documentation and comments describe the release as a standalone snapshot;
   omit project chronology, retired designs, and references to prior commits.
   Preserve external source citations and pinned dependency references. Keep the source map and authoritative decoded input in

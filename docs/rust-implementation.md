@@ -72,10 +72,8 @@ PYTHONPATH=python python3 -m fuzz.drivers.float --mode lean-rust --cases 1000 --
 PYTHONPATH=python python3 -m fuzz.drivers.float --mode all --cases 10000 --seed 271828
 ```
 
-Install formatter and linter components with `rustup component add rustfmt clippy`.
-Use `make format-rust` to apply rustfmt, `make format-check-rust` to check formatting,
-and `make lint-rust` to run Clippy over all targets and features with warnings
-treated as errors. `make test-rust` runs the locked Rust test suite.
+See the [development guide](development.md#formatting-and-linting) for rustfmt and
+Clippy setup, formatting checks, linting, and Makefile test targets.
 
 The numerical kernel is separate from the
 [fuzz oracle adapter](../rust/src/fuzz.rs), exposed as `ephemeris_reference::fuzz`.

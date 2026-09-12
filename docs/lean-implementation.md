@@ -220,11 +220,8 @@ Subsequent checks normally need only `lake build`. The default targets include
 checks, 33 stored-binary64 interpretation checks, and 72 optional Rational Message checks.
 They also build the Rational and Float oracles, using the same bounded P3 input schema.
 
-The Lake dependency [duckki/leanfmt v0.4.1](https://github.com/duckki/leanfmt/tree/v0.4.1)
-formats all project Lean files with `make format-lean`; `make format-check-lean`
-checks them without rewriting. Both build imported modules before running LeanFmt.
-`make lint-lean` uses the project's `warningAsError` Lake setting to reject Lean
-compiler and linter warnings.
+See the [development guide](development.md#formatting-and-linting) for the pinned
+LeanFmt dependency, formatting commands, and Lean lint checks.
 
 Continue with the [Python](python-implementation.md) and [Rust](rust-implementation.md)
 ports. Their source correspondence is tested rather than formally proved; shared
