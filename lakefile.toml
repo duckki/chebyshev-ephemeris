@@ -1,0 +1,36 @@
+name = "ephemeris"
+version = "0.1.0"
+defaultTargets = [
+  "Ephemeris",
+  "Ephemeris.Tests.Rational.PositionReconstruction",
+  "Ephemeris.Tests.ProofAudit",
+  "Ephemeris.Tests.Float.PositionReconstruction",
+  "Ephemeris.Tests.Message",
+  "Ephemeris.Tests.Binary64Value",
+  "ephemeris_oracle",
+  "ephemeris_float_oracle",
+]
+
+[leanOptions]
+warningAsError = true
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4.git"
+rev = "v4.33.1"
+
+[[require]]
+name = "leanfmt"
+git = "https://github.com/duckki/leanfmt.git"
+rev = "v0.4.1"
+
+[[lean_lib]]
+name = "Ephemeris"
+
+[[lean_exe]]
+name = "ephemeris_oracle"
+root = "Ephemeris.FuzzOracle.RationalOracle"
+
+[[lean_exe]]
+name = "ephemeris_float_oracle"
+root = "Ephemeris.FuzzOracle.FloatOracle"

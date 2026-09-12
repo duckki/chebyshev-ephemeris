@@ -1,0 +1,10 @@
+/.lake/
+/docs-generated/
+__pycache__/
+*.egg-info/
+/python/build/
+/python/dist/
+/.venv/
+.ruff_cache/
+/rust/target/
+.vscode/

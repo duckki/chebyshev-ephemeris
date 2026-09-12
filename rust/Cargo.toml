@@ -1,0 +1,13 @@
+[package]
+name = "ephemeris-reference"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Bounded Rust binary64 ephemeris receiver tested against Lean"
+
+[dependencies]
+serde_json = "=1.0.150"
+
+[[bin]]
+name = "ephemeris_float_reference"
+path = "src/main.rs"
