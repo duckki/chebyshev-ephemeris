@@ -117,7 +117,7 @@ theorem sourceAlgorithmCorrect
     : Implementation.Correctness.Real.SourceAlgorithmCorrect := by
   intro n a x
   simp only [Definitions.PositionReconstruction.table3Position, Implementation.Correctness.Real.polynomialPosition,
-    real_table3Coordinate]
+    XYZ.map, real_table3Coordinate]
 
 theorem reconstructCorrect (m : Message) (time : UInt64)
     : Definitions.PositionReconstruction.reconstruct m time
