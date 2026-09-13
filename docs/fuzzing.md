@@ -13,6 +13,14 @@ explicit `Float.Model` operations. It does not run native Float and then convert
 the resulting position. The same executable's `--native` mode is a separate
 comparison target that runs `Implementation.Float.PositionReconstruction.evaluate`.
 
+Both backends instantiate the same
+[binary64 kernel](../Ephemeris/Implementation/Float/ReconstructionKernel.lean).
+Their arithmetic executes independently, but normalization, loops, and validation
+share control flow. Comparing them can detect arithmetic/backend disagreement;
+it cannot detect a scheduling mistake shared by both instantiations. The separate
+real specification and accuracy contracts address the algorithm's mathematical
+meaning; see [proof status](lean-implementation.md#proof-status).
+
 | Mode | Targets |
 | --- | --- |
 | `all` (default) | Lean software model, native Lean Float, Python float, Rust f64 |
@@ -41,8 +49,8 @@ overflow, response shape/finiteness, error precedence, and recovery after bad li
 
 An independent rational recurrence in test support evaluates the exact polynomial
 of each successful sampled fixed-point message and query tick. Comparing the
-returned float with that target measures sampled error; it is not a radius
-computed by the native kernel. `--tolerance` defaults to 1e-5 meters, matching the
+returned float with that target measures sampled error.
+`--tolerance` defaults to 1e-5 meters, matching the
 proved Lean bound. This campaign tests that threshold on sampled Python/Rust
 outputs; it does not prove a bound for those ports. The report's
 `accuracy_is_formally_proved: false` describes the campaign's evidence, not the

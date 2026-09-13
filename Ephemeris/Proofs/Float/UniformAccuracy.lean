@@ -28,7 +28,10 @@ private theorem reconstruct_success (m : Message) (time : UInt64) (x : Float.Mod
         = some pz)
     : Implementation.Correctness.Float.modelReconstruct m time
       = some (⟨px, py, pz⟩ : XYZ Float.Model) := by
-  unfold Implementation.Correctness.Float.modelReconstruct
+  unfold Implementation.Correctness.Float.modelReconstruct Implementation.Float.ReconstructionKernel.reconstruct
+  dsimp only [Implementation.Correctness.Float.modelNormalizedEpoch,
+    Implementation.Correctness.Float.modelBasis,
+    Implementation.Correctness.Float.modelCoordinate] at hn hb hpx hpy hpz
   rewrite [Option.bind_eq_bind, hn, Option.bind_some,
     Option.bind_eq_bind, hb, Option.bind_some,
     hpx, Option.bind_some,
@@ -40,12 +43,9 @@ private theorem evaluation_success (m : Message) (time : UInt64) (p : XYZ Float.
     (hquery : Message.validateQuery m time = .ok ())
     (hrec : Implementation.Correctness.Float.modelReconstruct m time = some p)
     : Implementation.Correctness.Float.modelEvaluate m time = .ok p := by
-  unfold Implementation.Correctness.Float.modelEvaluate
-  generalize hout : Implementation.Correctness.Float.modelReconstruct m time = output at hrec ⊢
-  generalize hcheck : Message.validateQuery m time = check at hquery ⊢
-  cases hquery
-  cases hrec
-  rfl
+  unfold Implementation.Correctness.Float.modelEvaluate Implementation.Float.ReconstructionKernel.evaluate
+  dsimp only [Implementation.Correctness.Float.modelReconstruct] at hrec
+  simp [hquery, hrec]
 
 private theorem source_coordinate_sum (integers : Array Int32)
     (hsize : integers.size = 11) (X : ℝ)
@@ -65,10 +65,13 @@ private theorem source_coordinate_sum (integers : Array Int32)
 
 /-- Every supported query succeeds in the concrete binary64 model and is within
 10 micrometers per axis of real evaluation of the same fixed-point message. -/
-theorem modelUniformAccuracy
-    : Implementation.Correctness.Float.ModelUniformAccuracy (1 / 100000) := by
-  refine ⟨by norm_num, ?_⟩
-  intro m time hm ht
+theorem modelUniformAccuracy (m : Message) (time : UInt64)
+    (hm : Implementation.Correctness.Message.ValidMessage m)
+    (ht : Implementation.Correctness.Message.InWindow m time)
+    : ∃ result,
+        Implementation.Correctness.Float.modelEvaluate m time = .ok result
+        ∧ Implementation.Correctness.PositionAccuracy.Binary64Within result
+            (Definitions.PositionReconstruction.reconstruct m time) (1 / 100000) := by
   let X := Definitions.PositionReconstruction.normalizedEpoch (Definitions.PositionReconstruction.referenceDay m)
     (Definitions.PositionReconstruction.secondOfDay m) (Definitions.PositionReconstruction.validityHours m)
     (Definitions.PositionReconstruction.timeToReal time)
@@ -109,6 +112,6 @@ theorem modelUniformAccuracy
 /-- The native Lean Float receiver inherits the proved model bound through the
 complete operation-by-operation correspondence theorem. -/
 theorem uniformAccuracy : Implementation.Correctness.Float.UniformAccuracy (1 / 100000) :=
-  uniformAccuracy_of_modelAccuracy _ modelUniformAccuracy
+  uniformAccuracy_of_modelAccuracy _ (by norm_num) modelUniformAccuracy
 
 end Ephemeris.Proofs.Float.UniformAccuracy

@@ -32,7 +32,8 @@ under the type namespace (`Message.validateQuery`, `XYZ.map`). Names in the tabl
 are local to the linked module unless qualified.
 
 The final section of Definitions/PositionReconstruction is the non-executable
-ideal Message model; Implementation/Float contains native numerical code. Both expose unchecked
+ideal Message model; Implementation/Float contains the shared binary64 kernel and
+its native backend. Both the ideal model and native backend expose unchecked
 `reconstruct` and checked `evaluate`, accepting `Message` and a `UInt64` query tick.
 `Message.validateQuery` supplies common guards. Real results use `ℝ` and are
 noncomputable mathematical values; Float results use native `Float`.
@@ -41,11 +42,12 @@ noncomputable mathematical values; Float results use native `Float`.
 |---|---|
 | FP1, FP2, FP3 / [Message](../Ephemeris/Definitions/Message.lean) | `Message`; profile constants `coefficientWidths`, `degree`, `frame`; `coefficientFits`, `validate`; bounded `epochOriginTick`, `startTick`, `durationTicks`, `validateQuery` |
 | FP3 / [Ideal real interpretation](../Ephemeris/Definitions/PositionReconstruction.lean), ideal Message section | `coefficient`, `timeToReal`, `referenceDay`, `secondOfDay`, `validityHours`, `coefficients`: exact interpretations of integer fields; `reconstruct`, `evaluate`: source application and shared checks |
-| FP3 / [Float](../Ephemeris/Implementation/Float/PositionReconstruction.lean) | `coefficient`, `finite`, `normalizedEpoch`, `basis`, `coordinate`, `reconstruct`, `evaluate`: native Float operations and fixed loops, with bounded signed-conversion adaptation and no rational radius |
+| FP3 / [Binary64 kernel](../Ephemeris/Implementation/Float/ReconstructionKernel.lean) | `Backend`, `finite`, `normalizedEpoch`, `basis`, `coordinate`, `reconstruct`, `evaluate`: shared operation schedule, finite checks, fixed loops, and Message validation; no algebraic laws or proof fields |
+| FP3 / [Float](../Ephemeris/Implementation/Float/PositionReconstruction.lean) | `coefficient` and a local `Backend Float` instance: native conversion and classification; `finite`, `normalizedEpoch`, `basis`, `coordinate`, `reconstruct`, `evaluate`: concrete native wrappers around the shared kernel |
 | FP1, FP2, FP3 / [Correctness/Message](../Ephemeris/Implementation/Correctness/Message.lean) | Independent `CoefficientFits`, `ValidMessage`, and exact `InWindow`, used in the Real and Float contracts |
 | N1, FP2, FP3 / [Correctness/Real](../Ephemeris/Implementation/Correctness/Real.lean) | `polynomialBasis`, `polynomialCoordinate`, `polynomialPosition`: independent comparison semantics; loop/polynomial agreement for every normalized argument (`SourceAlgorithmCorrect`), independent Message `position`, checked `EvaluationCorrect`, and `QueryInterpretationCorrect` |
-| FP3 / [Correctness/Float](../Ephemeris/Implementation/Correctness/Float.lean), model execution | `modelCoefficient`, `modelFinite`, `modelNormalizedEpoch`, `modelBasis`, `modelCoordinate`, `modelReconstruct`, `modelEvaluate`: explicit software binary64 semantics using Float.Model, independent of native execution |
-| FP3 / [Correctness/Float](../Ephemeris/Implementation/Correctness/Float.lean) | `CoefficientDecodingExact`, `CoefficientModelsAgree`, `EvaluationModelsAgree`, `ModelUniformAccuracy`, `UniformAccuracy`: model decoding, native/model bits and errors, supported-domain success, and coordinatewise error against real evaluation of the same message/query |
+| FP3 / [Correctness/Float](../Ephemeris/Implementation/Correctness/Float.lean), model execution | `modelCoefficient` and local model instances: software binary64 conversion, literals, and classification; `modelFinite`, `modelNormalizedEpoch`, `modelBasis`, `modelCoordinate`, `modelReconstruct`, `modelEvaluate`: the same kernel instantiated with Float.Model |
+| FP3 / [Correctness/Float](../Ephemeris/Implementation/Correctness/Float.lean) | `CoefficientDecodingExact`, `CoefficientModelsAgree`, `EvaluationModelsAgree`, `UniformAccuracy`: model decoding, native/model bits and errors, supported-domain success, and coordinatewise error against real evaluation of the same message/query |
 | N3 / [Correctness/PositionAccuracy](../Ephemeris/Implementation/Correctness/PositionAccuracy.lean) | Shared `RealWithin` and `Binary64Within`: real coordinatewise bounds and finite float output interpretation |
 | FP2 / [Message](../Ephemeris/Definitions/Message.lean) | `ReceiverError`: shared project error codes; each implementation uses its specified subset |
 | Representation helper / [Definitions/Coordinates](../Ephemeris/Definitions/Coordinates.lean) | Componentwise `XYZ.map`; colocated with its record by project layout policy, not attributed to the paper. No arithmetic or message-precision policy. |
@@ -105,7 +107,28 @@ execute `Float.Model` operations independently. Their internal big-number operat
 are proof/oracle machinery, not the implementation recipe for Python or Rust.
 There are no runtime error radii in the primary Float evaluator.
 
+The [shared kernel](../Ephemeris/Implementation/Float/ReconstructionKernel.lean)
+parameterizes only the binary64 operation schedule. It reuses Lean's `Add`, `Sub`,
+`Mul`, `Div`, and `OfNat` typeclasses, plus a three-field `Backend` class for decoded
+coefficients, UInt64 conversion, and finiteness. Each concrete module declares a
+local backend instance; the model module also supplies its local numeric-literal
+instance. Public `abbrev` specializations retain concrete Float/Float.Model APIs.
+There are no field/ring assumptions or global backend instances. Inline kernel
+definitions expose the selected operations to native code generation.
+The real source interpretation and optional Rational evaluator remain separate.
+
+The model oracle shares control flow with the native backend while executing
+software arithmetic independently. It does not derive its answer from a native
+result. Shared scheduling errors require the separate mathematical contracts;
+native/model differential agreement alone cannot detect them.
+
 ## Proof status
+
+**The native Float evaluator has proved native/model correspondence, supported-domain
+success, and a 10-micrometer per-coordinate error bound.** The proofs apply to the
+shared binary64 kernel and its concrete backends.
+The model accuracy bound is stated directly as an intermediate theorem in
+`Proofs/Float/UniformAccuracy`; `UniformAccuracy` is the public accuracy contract.
 
 The [audit](../Ephemeris/Tests/ProofAudit.lean) checks 33 named theorem entry points
 and permits only `propext`, `Classical.choice`, and `Quot.sound`. It checks the
@@ -123,11 +146,11 @@ definition alone does not prove it.
 | Native Float normalization agrees with explicit software-model normalization | Proved |
 | `CoefficientDecodingExact` | Proved for every Int32 carrier |
 | `CoefficientModelsAgree` | Proved for every Int32 carrier |
-| `EvaluationModelsAgree` for the complete Float evaluator | Proved for every message/query, including invalid inputs and matching error codes |
-| `ModelUniformAccuracy (1 / 100000)` | Proved; finite results and success for every supported query |
-| `UniformAccuracy (1 / 100000)` for native Float | Proved through complete native/model correspondence |
+| `EvaluationModelsAgree` for the complete Float evaluator | Proved for every message/query, including invalid inputs |
+| Software-model success and accuracy within 10 micrometers per coordinate | Proved as an intermediate theorem |
+| `UniformAccuracy (1 / 100000)` for native Float | Proved |
 
-The proved uniform bound is **10 micrometers per coordinate** and includes finite
+The uniform accuracy contract requires **10 micrometers per coordinate**, finite
 results and success for every supported message/query. It compares absolute error
 in meters against real evaluation of the same integer message and tick. Fitting error, upstream
 quantization, tick-grid approximation, frame/time-scale conversions, and physical
@@ -140,22 +163,23 @@ conversion (including Int32 minimum), and exact division by 32. These facts deri
 from the pinned model definitions; no generic rounding axiom or finite enumeration
 of coefficient inputs is used.
 
-[PositionReconstruction](../Ephemeris/Proofs/Float/PositionReconstruction.lean) lifts
+[PositionReconstruction](../Ephemeris/Proofs/Float/PositionReconstruction.lean) proves
 primitive correspondence through both loops, all three coordinates, and the shared
-validation branches. This proves equality of the complete native Lean and model
-results, including errors. It does not establish Python/Rust source equivalence.
+validation branches. It establishes equality of the complete
+native Lean and model results, including errors. This is separate from Python/Rust
+source equivalence.
 
-[UniformAccuracy](../Ephemeris/Proofs/Float/UniformAccuracy.lean) completes the
-primary path. Its numerical proof is organized as follows:
+[UniformAccuracy](../Ephemeris/Proofs/Float/UniformAccuracy.lean) proves the model
+bound and transfers it to the native evaluator. Its numerical dependencies are:
 
-| Proof module | Established fact |
-| --- | --- |
-| [Binary64Rounding](../Ephemeris/Proofs/Float/Binary64Rounding.lean) | Conservative one-ulp bounds derived from the pinned model's shifts, rounding, and packing; covers signed zero, subnormals, and mantissa carry |
-| [Binary64Arithmetic](../Ephemeris/Proofs/Float/Binary64Arithmetic.lean) | Addition, subtraction, and multiplication produce finite results within explicit error bounds when the exact operation meets the stated magnitude limit |
-| [Binary64Division](../Ephemeris/Proofs/Float/Binary64Division.lean) | Natural integers below 2^53 convert exactly; the normalization quotient has error at most 2^-51 for 0 ≤ n ≤ d < 2^53 and d > 0 |
-| [EpochNormalization](../Ephemeris/Proofs/Float/EpochNormalization.lean) | Valid tick normalization succeeds, matches the paper's real epoch interpretation within 3·2^-50, and has its real reference in [-1,1] |
-| [ChebyshevBasis](../Ephemeris/Proofs/Float/ChebyshevBasis.lean) | The eleven-entry loop succeeds; basis error at index i is at most 3^i·2^-43, using Mathlib's real Chebyshev bound |
-| [CoordinateReconstruction](../Ephemeris/Proofs/Float/CoordinateReconstruction.lean) | Ascending accumulation succeeds; individual coefficient widths bound the total per-axis error by 10^-5 meters |
+| Proof module | Fact or obligation | Status |
+| --- | --- | --- |
+| [Binary64Rounding](../Ephemeris/Proofs/Float/Binary64Rounding.lean) | Conservative one-ulp bounds derived from the pinned model's shifts, rounding, and packing; covers signed zero, subnormals, and mantissa carry | Proved |
+| [Binary64Arithmetic](../Ephemeris/Proofs/Float/Binary64Arithmetic.lean) | Addition, subtraction, and multiplication produce finite results within explicit error bounds when the exact operation meets the stated magnitude limit | Proved |
+| [Binary64Division](../Ephemeris/Proofs/Float/Binary64Division.lean) | Natural integers below 2^53 convert exactly; the normalization quotient has error at most 2^-51 for 0 ≤ n ≤ d < 2^53 and d > 0 | Proved |
+| [EpochNormalization](../Ephemeris/Proofs/Float/EpochNormalization.lean) | Valid tick normalization succeeds, matches the paper's real epoch interpretation within 3·2^-50, and has its real reference in [-1,1] | Proved |
+| [ChebyshevBasis](../Ephemeris/Proofs/Float/ChebyshevBasis.lean) | The eleven-entry loop succeeds; basis error at index i is at most 3^i·2^-43, using Mathlib's real Chebyshev bound | Proved |
+| [CoordinateReconstruction](../Ephemeris/Proofs/Float/CoordinateReconstruction.lean) | Ascending accumulation succeeds; individual coefficient widths bound the total per-axis error by 10^-5 meters | Proved |
 
 All radii and rational interpretations in this analysis are proof machinery.
 The bound is stated in `Implementation/Correctness/Float.lean`. The concrete

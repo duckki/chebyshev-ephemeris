@@ -218,7 +218,8 @@ theorem finite_of_real (v : Float.Model) (x : ℝ)
     (h : Definitions.Binary64Value.toReal v = some x)
     : Implementation.Correctness.Float.modelFinite v = some v := by
   obtain ⟨q, hq, _⟩ := rational_of_real v x h
-  simp [Implementation.Correctness.Float.modelFinite, finite_of_rational v q hq]
+  change (if v.isFinite then some v else none) = some v
+  simp only [finite_of_rational v q hq, if_true]
 
 /-- Real-valued form of the concrete binary64 add bound. -/
 theorem add_error_real (a b : Float.Model) (x y : ℝ) (N : Int)

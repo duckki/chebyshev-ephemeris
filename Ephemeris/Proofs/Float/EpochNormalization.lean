@@ -108,8 +108,10 @@ theorem normalized_epoch_error (m : Message) (time : UInt64)
     change (Implementation.Correctness.Float.modelFinite (Float.Model.ofNat n / Float.Model.ofNat d)).bind _ = _
     rewrite [finite_of_real _ _ hr]
     rewrite [Option.bind_some]
+    change (Implementation.Correctness.Float.modelFinite
+      (Float.Model.ofUInt8 2 * (Float.Model.ofNat n / Float.Model.ofNat d))).bind _ = _
     rewrite [finite_of_real _ _ hsval]
-    rewrite [Option.bind_eq_bind, Option.bind_some]
+    rewrite [Option.bind_some]
     exact finite_of_real _ _ hxval
   · dsimp only
     rw [normalized_epoch_ticks m time hm ht, ← hn, ← hd]

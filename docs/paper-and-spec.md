@@ -187,6 +187,14 @@ step fits even at Int32's minimum. Positive q converts directly; divide by 32.0
 afterward. `CoefficientModelsAgree` specifies correspondence with the direct
 model conversion. This helper is an implementation choice, not a paper formula.
 
+The [binary64 kernel](../Ephemeris/Implementation/Float/ReconstructionKernel.lean)
+defines normalization, recurrence, summation, and validation once. Native
+and model instantiations reuse Lean's arithmetic typeclasses and provide local
+`Backend` instances for coefficient decoding, UInt64 conversion, and finiteness.
+The model backend lives in Correctness/Float and shares the kernel's control flow,
+while the real source and optional Rational evaluator retain separate algorithms.
+These operation classes assume no algebraic laws and carry no correctness proofs.
+
 `EvaluationModelsAgree` requires identical result bits and errors between native
 Float evaluation (interpreted with `toModel`) and software-model evaluation.
 The software oracle actually runs `Implementation.Correctness.Float.modelEvaluate`; converting a native
@@ -202,7 +210,9 @@ duration = validityCode * 1800000000
 The accepted metadata bounds keep these operations, including the end epoch,
 within UInt64. Query ticks use the same axis. Normalization subtracts ticks before
 float conversion. Division, the Chebyshev recurrence, and accumulation are rounded
-operations; their proved combined error is at most 10 micrometers per coordinate.
+operations; the accuracy contract requires combined error of at most 10 micrometers
+per coordinate. This bound is proved for the shared kernel and native backend; see
+[proof status](lean-implementation.md#proof-status).
 Approximation of an arbitrary real query time to microsecond ticks is a separate
 input error, not included in evaluation of that exact tick.
 
@@ -213,9 +223,9 @@ or generic message parameter in the receiver. Real, Rational, and Float all
 accept this same Message and tick; ℝ, ℚ, and binary64 are working interpretations
 of those integer fields.
 
-`ModelUniformAccuracy` states the corresponding bound for the software semantics.
-The completed proof chain combines model accuracy with native/model correspondence,
-yielding `UniformAccuracy (1 / 100000)` for the Lean Float implementation. Runtime
+Accuracy of the software semantics is an intermediate theorem in the proof layer.
+The proof combines that bound with native/model correspondence
+to establish `UniformAccuracy (1 / 100000)` for the Lean Float implementation. Runtime
 agreement with Lean's modeled primitive operations remains an execution assumption supported
 by conformance tests; it is not a proof of a compiler or processor.
 

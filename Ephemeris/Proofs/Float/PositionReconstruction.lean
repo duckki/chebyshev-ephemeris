@@ -9,7 +9,7 @@ open Ephemeris.Proofs.Float.CoefficientDecoding
 private theorem model_add (a b : Float) : (a + b).toModel = a.toModel + b.toModel := rfl
 
 @[simp]
-private theorem model_zero : (0.0 : Float).toModel = Float.Model.ofUInt8 0 := by decide
+private theorem model_zero : (Float.ofNat 0).toModel = Float.Model.ofNat 0 := by decide
 
 @[simp]
 private theorem model_div (a b : Float) : (a / b).toModel = a.toModel / b.toModel := rfl
@@ -21,22 +21,23 @@ private theorem model_mul (a b : Float) : (a * b).toModel = a.toModel * b.toMode
 private theorem model_sub (a b : Float) : (a - b).toModel = a.toModel - b.toModel := rfl
 
 @[simp]
-private theorem model_two : (2.0 : Float).toModel = Float.Model.ofUInt8 2 := by decide
+private theorem model_two : (Float.ofNat 2).toModel = Float.Model.ofNat 2 := by decide
 
 @[simp]
-private theorem model_one : (1.0 : Float).toModel = Float.Model.ofUInt8 1 := by decide
+private theorem model_one : (Float.ofNat 1).toModel = Float.Model.ofNat 1 := by decide
 
 theorem finite_agree (v : Float)
     : (Implementation.Float.PositionReconstruction.finite v).map Float.toModel
       = Implementation.Correctness.Float.modelFinite v.toModel := by
-  unfold Implementation.Float.PositionReconstruction.finite Implementation.Correctness.Float.modelFinite Float.isFinite
+  change (if v.toModel.isFinite then some v else none).map Float.toModel =
+    (if v.toModel.isFinite then some v.toModel else none)
   split <;> rfl
 
 theorem normalizedEpochModelsAgree (m : Message) (time : UInt64)
     : (Implementation.Float.PositionReconstruction.normalizedEpoch m time).map
         Float.toModel
       = Implementation.Correctness.Float.modelNormalizedEpoch m time := by
-  unfold Implementation.Float.PositionReconstruction.normalizedEpoch Implementation.Correctness.Float.modelNormalizedEpoch
+  unfold Implementation.Float.PositionReconstruction.normalizedEpoch Implementation.Correctness.Float.modelNormalizedEpoch Implementation.Float.ReconstructionKernel.normalizedEpoch
   simp only [Option.bind_eq_bind, Option.map_bind]
   change _ = (Implementation.Correctness.Float.modelFinite (((time - Message.startTick m).toFloat /
     (Message.durationTicks m).toFloat).toModel)).bind _
@@ -76,9 +77,13 @@ theorem basisModelsAgree (argument : Float)
     : (Implementation.Float.PositionReconstruction.basis argument).map
         (Array.map Float.toModel)
       = Implementation.Correctness.Float.modelBasis argument.toModel := by
-  unfold Implementation.Float.PositionReconstruction.basis Implementation.Correctness.Float.modelBasis
+  have hfinite := finite_agree
+  dsimp only [Implementation.Float.PositionReconstruction.finite,
+    Implementation.Correctness.Float.modelFinite] at hfinite
+  unfold Implementation.Float.PositionReconstruction.basis Implementation.Correctness.Float.modelBasis Implementation.Float.ReconstructionKernel.basis
+  dsimp only [OfNat.ofNat]
   simp only [bind_pure, Option.bind_eq_bind, Option.map_bind]
-  rw [← finite_agree, Option.bind_map]
+  rw [← hfinite, Option.bind_map]
   congr 1
   funext x
   simp only [Function.comp_def, Std.Legacy.Range.forIn_eq_forIn_range']
@@ -92,7 +97,7 @@ theorem basisModelsAgree (argument : Float)
     next _ => simp [mapStep]
     next _ =>
       simp only [← model_zero, model_getD, ← model_two, ← model_mul, ← model_sub,
-        ← finite_agree, Option.bind_map, Option.map_bind, Function.comp_def,
+        ← hfinite, Option.bind_map, Option.map_bind, Function.comp_def,
         mapStep, Option.map_some, pure, Pure.pure, Array.map_push]
 
 theorem coordinateModelsAgree (integers : Array Int32) (values : Array Float)
@@ -100,19 +105,23 @@ theorem coordinateModelsAgree (integers : Array Int32) (values : Array Float)
         Float.toModel
       = Implementation.Correctness.Float.modelCoordinate integers
           (values.map Float.toModel) := by
-  unfold Implementation.Float.PositionReconstruction.coordinate Implementation.Correctness.Float.modelCoordinate
+  have hfinite := finite_agree
+  dsimp only [Implementation.Float.PositionReconstruction.finite,
+    Implementation.Correctness.Float.modelFinite] at hfinite
+  unfold Implementation.Float.PositionReconstruction.coordinate Implementation.Correctness.Float.modelCoordinate Implementation.Float.ReconstructionKernel.coordinate
+  dsimp only [OfNat.ofNat, Implementation.Float.ReconstructionKernel.Backend.coefficient]
   simp only [bind_pure, Std.Legacy.Range.forIn_eq_forIn_range', ← model_zero]
   apply forIn_map_option
   intro i result
-  simp only [model_getD, ← coefficientModelsAgree (integers.getD i 0), ← model_mul, ← model_add,
-    ← finite_agree, Option.bind_eq_bind, Option.bind_map, Option.map_bind,
+  simp only [model_getD, ← coefficientModelsAgree (integers.getD i (Int32.ofNat 0)), ← model_mul, ← model_add,
+    ← hfinite, Option.bind_eq_bind, Option.bind_map, Option.map_bind,
     Function.comp_def, mapStep, Option.map_some, pure, Pure.pure]
 
 theorem reconstructModelsAgree (m : Message) (time : UInt64)
     : (Implementation.Float.PositionReconstruction.reconstruct m time).map
         (XYZ.map Float.toModel)
       = Implementation.Correctness.Float.modelReconstruct m time := by
-  unfold Implementation.Float.PositionReconstruction.reconstruct Implementation.Correctness.Float.modelReconstruct
+  unfold Implementation.Float.PositionReconstruction.reconstruct Implementation.Correctness.Float.modelReconstruct Implementation.Float.ReconstructionKernel.reconstruct
   simp only [← normalizedEpochModelsAgree, ← basisModelsAgree, ← coordinateModelsAgree,
     Option.bind_eq_bind, Option.bind_map, Option.map_bind, Function.comp_def,
     Option.map_some, pure, Pure.pure, XYZ.map]
@@ -120,22 +129,36 @@ theorem reconstructModelsAgree (m : Message) (time : UInt64)
 theorem evaluationModelsAgree
     : Implementation.Correctness.Float.EvaluationModelsAgree := by
   intro m time
-  unfold Implementation.Float.PositionReconstruction.evaluate Implementation.Correctness.Float.modelEvaluate
-  rw [← reconstructModelsAgree]
+  unfold Implementation.Float.PositionReconstruction.evaluate Implementation.Correctness.Float.modelEvaluate Implementation.Float.ReconstructionKernel.evaluate
+  have hrec := reconstructModelsAgree m time
+  dsimp only [Implementation.Float.PositionReconstruction.reconstruct,
+    Implementation.Correctness.Float.modelReconstruct] at hrec
+  rw [← hrec]
   cases hv : Message.validateQuery m time with
   | error e => rfl
   | ok _ =>
-      cases hr : Implementation.Float.PositionReconstruction.reconstruct m time <;> rfl
+      generalize hr : Implementation.Float.PositionReconstruction.reconstruct m time = result
+      dsimp only [Implementation.Float.PositionReconstruction.reconstruct] at hr
+      rw [hr]
+      cases result <;> rfl
 
 /-- Transfer a separately proved software bound through complete correspondence.
 Complete native/model correspondence is proved above; the numerical bound remains
 a separate obligation. -/
 theorem uniformAccuracy_of_modelAccuracy (tolerance : ℝ)
-    (accuracy : Implementation.Correctness.Float.ModelUniformAccuracy tolerance)
+    (htolerance : 0 ≤ tolerance)
+    (accuracy
+      : ∀ m time,
+          Implementation.Correctness.Message.ValidMessage m
+          → Implementation.Correctness.Message.InWindow m time
+          → ∃ result,
+              Implementation.Correctness.Float.modelEvaluate m time = .ok result
+              ∧ Implementation.Correctness.PositionAccuracy.Binary64Within result
+                  (Definitions.PositionReconstruction.reconstruct m time) tolerance)
     : Implementation.Correctness.Float.UniformAccuracy tolerance := by
-  refine ⟨accuracy.1, ?_⟩
+  refine ⟨htolerance, ?_⟩
   intro m time hm ht
-  obtain ⟨result, hresult, hbound⟩ := accuracy.2 m time hm ht
+  obtain ⟨result, hresult, hbound⟩ := accuracy m time hm ht
   have heq := evaluationModelsAgree m time
   rw [hresult] at heq
   cases hnative : Implementation.Float.PositionReconstruction.evaluate m time with

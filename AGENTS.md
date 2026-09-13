@@ -29,8 +29,10 @@
   real model lives in Definitions. Optional concrete rational execution and its
   exact arithmetic helpers live together in `Implementation/Rational/`.
   These runtime folders must not import each other or `Correctness/`, even
-  transitively. Shared runtime helpers, when needed, belong at the Implementation
-  root and must not import implementation subdirectories. The common decoded-input
+  transitively. Helpers shared across runtime categories belong at the Implementation
+  root and must not import implementation subdirectories. The shared native/model
+  binary64 reconstruction kernel belongs under `Implementation/Float/`; Rational
+  keeps its own concrete algorithm. The common decoded-input
   guards are in `Definitions/Message`.
   Mirror numeric categories in `Proofs/` and `Tests/`; `Proofs/Real/` proves the
   ideal source interpretation. Shared lemmas and cross-cutting audits stay at
@@ -100,6 +102,10 @@
   `Float.Model` execution in correctness semantics and oracle/test tooling. The
   runtime evaluator must not call the software model. Its independent oracle must
   execute model operations, not run the native evaluator and convert its output.
+  Native and model backends may instantiate the same binary64 operation schedule;
+  use standard arithmetic typeclasses and local binary64 backend instances, with
+  the model backend in Correctness. Keep the public specializations concrete.
+  Describe this oracle as independent arithmetic execution with shared control flow.
   Prefer logically modeled native conversions; keep any necessary bounded conversion
   adaptation explicit with its correspondence contract. The model's internal
   big-number operations are not instructions to copy into Rust/Python.

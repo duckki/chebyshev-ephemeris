@@ -33,7 +33,8 @@ private theorem basis_as_fold (x : Float.Model) (u : ℝ)
     (hx : Definitions.Binary64Value.toReal x = some u)
     : Implementation.Correctness.Float.modelBasis x
       = (List.range 11).foldlM (basisStep x) #[] := by
-  unfold Implementation.Correctness.Float.modelBasis
+  unfold Implementation.Correctness.Float.modelBasis Implementation.Float.ReconstructionKernel.basis
+  change (Implementation.Correctness.Float.modelFinite x).bind _ = _
   rw [finite_of_real _ _ hx]
   simp only [Option.bind_eq_bind, Option.bind, bind_pure, Std.Legacy.Range.forIn_eq_forIn_range',
     Std.Legacy.Range.size, ← List.range_eq_range']
@@ -44,19 +45,12 @@ private theorem basis_as_fold (x : Float.Model) (u : ℝ)
   funext i values
   by_cases hi0 : i = 0
   · simp [basisValue, hi0]
+    rfl
   by_cases hi1 : i = 1
   · simp [basisValue, hi1]
   simp only [basisValue, hi0, hi1, ↓reduceIte, beq_iff_eq, Option.bind_eq_bind]
-  cases ha : Implementation.Correctness.Float.modelFinite (Float.Model.ofUInt8 2 * x) with
-  | none => simp
-  | some a =>
-      cases hb
-            : Implementation.Correctness.Float.modelFinite
-                (a * values[i-1]?.getD (Float.Model.ofUInt8 0)) with
-      | none => simp [Array.getD_eq_getD_getElem?, hb]
-      | some b =>
-          cases hc : Implementation.Correctness.Float.modelFinite (b - values[i-2]?.getD (Float.Model.ofUInt8 0)) <;>
-            simp [Array.getD_eq_getD_getElem?, hb, hc]
+  simp only [Option.map_eq_map, Option.map_eq_bind, Option.bind_assoc]
+  rfl
 
 private theorem abs_mul_difference (a b c d : ℝ)
     : |a * b - c * d| ≤ |a - c| * |b| + |c| * |b - d| := by

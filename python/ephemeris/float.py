@@ -1,8 +1,8 @@
 """Bounded binary64 receiver matching Lean Implementation.Float (FP1/FP2/FP3).
 
 A message describes a trajectory segment. evaluate_float returns its XYZ position
-in meters at a UInt64 microsecond Julian-date tick. There is no rational arithmetic,
-error-radius computation, or implicit input quantization in this implementation.
+in meters at a UInt64 microsecond Julian-date tick. There is no implicit input
+quantization in this implementation.
 """
 
 import math

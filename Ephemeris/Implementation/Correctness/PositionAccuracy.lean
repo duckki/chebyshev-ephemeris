@@ -25,7 +25,8 @@ def RealWithin (approximate exact : XYZ ℝ) (budget : ℝ) : Prop :=
 
 /-- F1 / N3: a binary64 result must be finite on all axes and meet the
 specified coordinatewise error budget relative to an exact real position.
-`Implementation.Correctness.Float.ModelUniformAccuracy` uses this relation for its proved bound. -/
+`Implementation.Correctness.Float.UniformAccuracy` uses this relation for its native
+accuracy contract. -/
 def Binary64Within (value : XYZ Float.Model) (exact : XYZ ℝ) (budget : ℝ) : Prop :=
   match Definitions.Binary64Value.toReal value.x,
         Definitions.Binary64Value.toReal value.y, Definitions.Binary64Value.toReal

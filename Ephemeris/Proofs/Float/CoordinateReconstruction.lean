@@ -79,7 +79,7 @@ private theorem coordinate_as_fold (integers : Array Int32) (values : Array Floa
     : Implementation.Correctness.Float.modelCoordinate integers values
       = (List.range 11).foldlM (coordinateStep integers values)
           (Float.Model.ofUInt8 0) := by
-  unfold Implementation.Correctness.Float.modelCoordinate
+  unfold Implementation.Correctness.Float.modelCoordinate Implementation.Float.ReconstructionKernel.coordinate
   simp only [bind_pure, Std.Legacy.Range.forIn_eq_forIn_range',
     Std.Legacy.Range.size, ← List.range_eq_range']
   have hfold := List.forIn_yield_eq_foldlM (m := Option) (l := List.range 11)
@@ -97,6 +97,7 @@ private theorem coordinate_as_fold (integers : Array Int32) (values : Array Floa
   congr 1
   funext product
   simp only [Function.comp_apply]
+  change (Implementation.Correctness.Float.modelFinite (result + product)).bind _ = _
   cases Implementation.Correctness.Float.modelFinite (result + product) <;> rfl
 
 private theorem coordinate_prefix (integers : Array Int32) (values : Array Float.Model)

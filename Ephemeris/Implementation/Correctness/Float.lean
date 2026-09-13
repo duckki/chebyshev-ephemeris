@@ -1,99 +1,73 @@
 import Ephemeris.Definitions.Message
-import Ephemeris.Implementation.Float.PositionReconstruction
 import Ephemeris.Definitions.PositionReconstruction
+import Ephemeris.Implementation.Float.PositionReconstruction
 import Ephemeris.Implementation.Correctness.Message
 import Ephemeris.Implementation.Correctness.PositionAccuracy
 
 /-!
-# Binary64 execution semantics and native Float correctness contracts
+# Binary64 model backend and native Float correctness contracts
 
-The first section executes Float.Model operations independently of the native
-evaluator. The second states decoding, native/model correspondence, and real-error
-contracts. Decoding, native/model correspondence, and uniform accuracy at 10 micrometers
-per coordinate are proved in Proofs/Float. This module contains no proof scripts.
+The model backend executes Float.Model operations through the same reconstruction
+kernel as the native Float backend. It shares control flow, while its arithmetic
+runs independently of native Float; it does not run the native evaluator and then
+convert its result. The real source interpretation and optional rational evaluator
+remain separate definitions.
+
+The final section states decoding, native/model correspondence, and real-error
+contracts.
 -/
-
-/-! FP3: software binary64 semantics of the fixed-point receiver, for correctness
-statements and independent oracle execution. Every operation explicitly uses
-Float.Model. In particular this does not run the native evaluator and convert
-its result afterward. The operation schedule follows the adopted Table 3 loops.
-
-This is an original finite-precision specification, not an external source
-translation. The implementation is separate in Implementation/Float. Complete
-native/model correspondence is established in Proofs/Float/PositionReconstruction. -/
 
 namespace Ephemeris.Implementation.Correctness.Float
 open Ephemeris.Implementation.Correctness.Message
       Ephemeris.Implementation.Correctness.PositionAccuracy
 
+------------------------------------------------------------------------------------------
+-- Float.Model instance of ReconstructionKernel
+------------------------------------------------------------------------------------------
+
 /-- FP3: exact coefficient decoding for these signed integer widths. -/
 def modelCoefficient (q : Int32) : Float.Model :=
   Definitions.Message.int32ToBinary64 q / Float.Model.ofUInt8 32
 
-/-- FP3: reject a nonfinite intermediate before it can enter a later operation. -/
-def modelFinite (value : Float.Model) : Option Float.Model :=
-  if value.isFinite then some value else none
+/-- FP3: software binary64 conversion and classification.
+The existing Float.Model arithmetic instances supply every rounded operation. -/
+local instance : Implementation.Float.ReconstructionKernel.Backend Float.Model where
+  coefficient := modelCoefficient
+  ofUInt64 := Definitions.Message.uint64ToBinary64
+  isFinite := Float.Model.isFinite
 
-/-- FP3: subtract integer ticks before converting; division/multiply/subtract
-are separately rounded. The unchecked helper requires a validated query. -/
-def modelNormalizedEpoch (m : Message) (time : UInt64) : Option Float.Model := do
-  let elapsed := time - Message.startTick m
-  let ratio ←
-    modelFinite
-      (Definitions.Message.uint64ToBinary64 elapsed
-        / Definitions.Message.uint64ToBinary64 (Message.durationTicks m))
-  let scaled ← modelFinite (Float.Model.ofUInt8 2 * ratio)
-  modelFinite (scaled - Float.Model.ofUInt8 1)
+/-- FP3: model interpretation of the kernel's numeric literals (0, 1, and 2).
+This instance is local to model execution and does not affect native Float. -/
+local instance (n : Nat) : OfNat Float.Model n := ⟨Float.Model.ofNat n⟩
 
-/-- FP3 / B25 Table 3: eleven basis values, with separately rounded operations. -/
-def modelBasis (argument : Float.Model) : Option (Array Float.Model) := do
-  let x ← modelFinite argument
-  let mut values := #[]
-  for i in [:11] do
-    let value ←
-      if i == 0 then
-        pure (Float.Model.ofUInt8 1)
-      else if i == 1 then
-        pure x
-      else do
-        let twiceX ← modelFinite (Float.Model.ofUInt8 2 * x)
-        let product ← modelFinite (twiceX * values.getD (i - 1) (Float.Model.ofUInt8 0))
-        modelFinite (product - values.getD (i - 2) (Float.Model.ofUInt8 0))
-    values := values.push value
-  return values
+/-- FP3: reject nonfinite model values. -/
+abbrev modelFinite := Implementation.Float.ReconstructionKernel.finite (α := Float.Model)
 
-/-- FP3 / B25 Table 3: decode fixed-point coefficients and accumulate a_0..a_10.
-No fused operations or reassociation. Storage shape is checked by modelEvaluate. -/
-def modelCoordinate (integers : Array Int32) (values : Array Float.Model)
-    : Option Float.Model := do
-  let zero := Float.Model.ofUInt8 0
-  let mut result := zero
-  for i in [:11] do
-    let product ← modelFinite (modelCoefficient (integers.getD i 0) * values.getD i zero)
-    result ← modelFinite (result + product)
-  return result
+/-- FP3: bounded elapsed ticks, with separately rounded model operations. -/
+abbrev modelNormalizedEpoch :=
+  Implementation.Float.ReconstructionKernel.normalizedEpoch (α := Float.Model)
 
-/-- FP3: unchecked evaluation; the public checked entry point has identical inputs. -/
-def modelReconstruct (m : Message) (time : UInt64) : Option (XYZ Float.Model) := do
-  let x ← modelNormalizedEpoch m time
-  let values ← modelBasis x
-  let px ← modelCoordinate m.coefficients.x values
-  let py ← modelCoordinate m.coefficients.y values
-  let pz ← modelCoordinate m.coefficients.z values
-  return ⟨px, py, pz⟩
+/-- FP3 / B25 Table 3: the shared eleven-entry recurrence using Float.Model. -/
+abbrev modelBasis := Implementation.Float.ReconstructionKernel.basis (α := Float.Model)
 
-/-- FP2/FP3: same message and query as the real evaluator. There is no radius or
-budget parameter: the fixed-profile error bound must be proved offline. -/
-def modelEvaluate (m : Message) (time : UInt64)
-    : Except ReceiverError (XYZ Float.Model) := do
-  Message.validateQuery m time
-  match modelReconstruct m time with
-  | some value => return value
-  | none => throw .nonfiniteComputation
+/-- FP3 / B25 Table 3: the shared ascending sum using Float.Model. -/
+abbrev modelCoordinate :=
+  Implementation.Float.ReconstructionKernel.coordinate (α := Float.Model)
 
-/-! FP3: relate arithmetic choices on the same Message, not different message formats.
-The bounds are proved at tolerance 1/100000 meters. No optional rational
-evaluator is imported. -/
+/-- FP3: unchecked software-model reconstruction of the same Message and tick. -/
+abbrev modelReconstruct :=
+  Implementation.Float.ReconstructionKernel.reconstruct (α := Float.Model)
+
+/-- FP2/FP3: common validation and software-model reconstruction. -/
+abbrev modelEvaluate :=
+  Implementation.Float.ReconstructionKernel.evaluate (α := Float.Model)
+
+------------------------------------------------------------------------------------------
+-- Correctness/accuracy statements
+------------------------------------------------------------------------------------------
+
+/-! FP3: relations on the same Message, not different message formats. These
+statements specify the 1/100000-meter target and shared-kernel correspondence. -/
 
 /-- FP3: fixed-point decoding in the binary64 specification introduces no error,
 even for any Int32 carrier. -/
@@ -117,19 +91,8 @@ def EvaluationModelsAgree : Prop :=
       (XYZ.map Float.toModel)
     = modelEvaluate m time
 
-/-- FP3: numerical proof target for the explicit software semantics. -/
-def ModelUniformAccuracy (tolerance : ℝ) : Prop :=
-  0 ≤ tolerance
-  ∧ ∀ m time,
-      ValidMessage m
-      → InWindow m time
-      → ∃ result,
-          modelEvaluate m time = .ok result
-          ∧ Binary64Within result (Definitions.PositionReconstruction.reconstruct m time)
-              tolerance
-
 /-- FP3: every valid query succeeds within a useful uniform per-coordinate bound
-of real evaluation of the SAME message and query tick. The evaluator computes no radius. -/
+of real evaluation of the SAME message and query tick. -/
 def UniformAccuracy (tolerance : ℝ) : Prop :=
   0 ≤ tolerance
   ∧ ∀ m time,

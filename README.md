@@ -1,21 +1,21 @@
 # Ephemeris
 
-**Satellite position reconstruction, proved in Lean and ported to Python and Rust.**
+**Satellite position reconstruction in Lean, with Python and Rust ports.**
 
 Ephemeris implements the Chebyshev reconstruction algorithm from
 [Bury et al. (2025)](https://doi.org/10.1186/s40645-024-00676-1) in Lean, proves its
 correctness and floating-point accuracy, then checks the Python and Rust ports
 against Lean's numerical model through differential fuzzing.
 
-**The main guarantee:** every supported Lean binary64 query succeeds with finite
+**Proved in Lean:** every supported Lean binary64 query succeeds with finite
 XYZ coordinates within **10 micrometers per axis** of exact real evaluation of
-the same decoded message.
+the same decoded message. See the [proof details](docs/lean-implementation.md#proof-status).
 
 ## What's implemented
 
-- **Lean specification and proofs:** real Chebyshev semantics, input validation,
-  exact coefficient decoding, bounded tick arithmetic, and agreement between
-  native Float execution and its software model.
+- **Lean specification and proofs:** real number Chebyshev semantics, input validation,
+  exact coefficient decoding, bounded tick arithmetic, floating-point version agreement,
+  and the numerical accuracy bound.
 - **Executable receivers:** binary64 implementations in Lean, Python, and Rust,
   sharing a bounded integer input contract. Lean and Python also provide exact
   rational reference evaluators.
