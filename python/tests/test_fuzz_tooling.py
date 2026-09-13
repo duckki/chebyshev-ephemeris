@@ -62,6 +62,11 @@ class FuzzToolingTests(unittest.TestCase):
                         "Ephemeris/Definitions/Message.lean",
                         report["unavailable_sources"],
                     )
+                    if driver == "float":
+                        self.assertIn(
+                            "Ephemeris/Implementation/Float/ReconstructionKernel.lean",
+                            report["unavailable_sources"],
+                        )
                     for command in report["oracle_commands"].values():
                         self.assertTrue(Path(command["argv"][0]).is_file())
                         self.assertEqual(len(command["executable_sha256"]), 64)
@@ -92,6 +97,11 @@ class FuzzToolingTests(unittest.TestCase):
             self.assertEqual(report["generated_cases"], 0)
             self.assertEqual(report["requests"], 1)
             self.assertEqual(report["replay"], str(replay))
+            if (Path(__file__).resolve().parents[2] / "lakefile.toml").is_file():
+                self.assertIn(
+                    "Ephemeris/Implementation/Float/ReconstructionKernel.lean",
+                    report["source_sha256"],
+                )
 
     def test_float_limits_must_be_finite(self):
         for argument in [

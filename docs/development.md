@@ -1,6 +1,6 @@
 # Development
 
-Build, format, and check the project from the repository root. For the algorithm
+Build, format, and reproduce its validation from the repository root. For the algorithm
 and its guarantees, start with the [project introduction](../README.md),
 [specification](paper-and-spec.md), and [Lean proof status](lean-implementation.md#proof-status).
 
@@ -70,7 +70,8 @@ Each target has a language-specific variant:
   formats `Ephemeris.lean` and every Lean file under `Ephemeris/`. Both formatting
   targets build imported modules first so LeanFmt can load project syntax.
   Linting uses the Lake build with `warningAsError = true`.
-- **Python:** Ruff formats all source, fuzz tooling, and tests under `python/`.
+- **Python:** Ruff formats source, fuzz tooling, and tests under `python/`, plus
+  development helpers under `scripts/`.
   The formatting target also sorts imports. Linting checks import order, unused
   or undefined names, and basic Python errors. Ruff is installed in `.venv/`;
   no environment activation is required for Makefile targets.
@@ -82,7 +83,8 @@ Formatting applies source edits. Review the diff, then run the complete checks.
 ## Tests and complete checks
 
 ```sh
-make check        # Formatting checks, linting, Lean build/audit, and Python/Rust tests
+make check        # Formatting, linting, Lean build/audit, Python/Rust tests, and docs
+make check-docs   # Check local documentation links and heading anchors offline
 make test         # Lean checks plus Python and Rust regression suites
 make test-python  # Build Lean/Rust oracles and run the 31 Python tests
 make test-rust    # Run the 5 Rust regression tests with locked dependencies
@@ -93,15 +95,22 @@ missing dependencies and caches, install Python development tools, and build
 executables. The Python tests invoke the Lean and release Rust oracle programs;
 `make test-python` builds those dependencies automatically.
 
+The documentation check covers inline Markdown links and heading anchors in the
+README and guides. It skips external websites and fenced code examples.
+
 ## Differential fuzzing
 
-After `make check`, run a campaign against all four Float targets:
+The Makefile builds the required oracles and runs fixed, reproducible campaigns:
 
 ```sh
-PYTHONPATH=python .venv/bin/python -m fuzz.drivers.float --mode all --cases 1000 --seed 20260911 --output .lake/fuzz-development
+make fuzz-smoke     # Small four-target Float and exact Rational campaigns
+make fuzz-full      # Full recorded Float and Rational campaigns
+make release-check  # Complete checks followed by the full campaigns
 ```
 
-The targets are the independent Lean Float model, native Lean Float, Python,
-and Rust. Reports and any failure reproducer go to the selected output directory.
+The Float targets are the independent Lean Float model, native Lean Float, Python,
+and Rust. Reports and any failure reproducer go under `.lake/validation/` by
+default; set `VALIDATION_DIR` to choose another directory. `environment.txt`
+records the checkout commit, working-tree changes, OS, and Python/Rust/Lean versions.
 The [fuzzing guide](fuzzing.md) covers comparison modes, exact rational
 campaigns, replay, and the recorded validation results.

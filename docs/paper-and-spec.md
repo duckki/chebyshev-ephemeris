@@ -15,7 +15,7 @@ The component evaluates the decoded Chebyshev polynomial. The published
 allocation informs the project's [decoded input contract](paper-and-spec.md#decoded-input-contract).
 Fitting, upstream quantization, velocity, and adaptive compression are separate
 work. The paper describes least-squares fitting but does not supply a complete
-fitting-solver algorithm. The [format review](references/paper-message-format.md) distinguishes
+fitting-solver algorithm. The [decoded input contract](#decoded-input-contract) distinguishes
 published facts from project numerical-input decisions. Satellite serialization
 is outside this receiver.
 

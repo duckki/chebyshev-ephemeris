@@ -184,9 +184,7 @@ bound and transfers it to the native evaluator. Its numerical dependencies are:
 All radii and rational interpretations in this analysis are proof machinery.
 The bound is stated in `Implementation/Correctness/Float.lean`. The concrete
 rounding bridge is proved directly using Lean's `Float.Model` and Mathlib. No rounding axiom
-or exhaustive enumeration of input messages substitutes for the proof. The
-[library assessment](references/floating-point-library-assessment.md) records the
-available libraries and the proof approach used here.
+or exhaustive enumeration of input messages substitutes for the proof.
 
 ## Optional rational reference
 

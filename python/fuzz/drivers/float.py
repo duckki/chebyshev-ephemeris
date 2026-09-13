@@ -71,7 +71,10 @@ def run(args):
                         f"empirical accuracy threshold exceeded; replay {artifact}"
                     )
     sources = [
+        "lean-toolchain",
+        "lake-manifest.json",
         "Ephemeris/Definitions/Message.lean",
+        "Ephemeris/Implementation/Float/ReconstructionKernel.lean",
         "Ephemeris/Implementation/Float/PositionReconstruction.lean",
         "Ephemeris/Implementation/Correctness/Float.lean",
         "Ephemeris/FuzzOracle/FloatOracle.lean",
@@ -80,6 +83,7 @@ def run(args):
         "python/ephemeris/float.py",
         "rust/src/lib.rs",
         "rust/src/fuzz.rs",
+        "rust/Cargo.lock",
         "python/fuzz/shared/float_protocol.py",
         "python/fuzz/shared/protocol.py",
         "python/fuzz/shared/clients.py",

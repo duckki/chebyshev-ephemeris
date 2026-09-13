@@ -197,16 +197,15 @@ Empty batches return an empty list.
 
 ## Recorded campaign
 
-Release validation on 2026-09-11 passed the following campaigns:
+Release validation passed the following reproducible campaigns:
 
 | Campaign | Result |
 | --- | --- |
 | Float, all four targets, seed `271828`, 10,000 generated groups | **30,464 requests** with identical bits/errors; 20,177 successful positions; maximum sampled coordinate error **1.1069938432770927e-8 m** |
 | Rational, seeds `20260911` and `314159265`, 3,000 base cases each | **7,012 exact differential queries** (3,509 + 3,503), including shared validation errors and algebraic properties |
 
-The Float run took 45.82 seconds and the Rational runs 10.76 seconds, including
-process/JSON and test-oracle work. These are campaign timings, not kernel or
-onboard execution measurements. Reproduce the corpora with:
+Report timings include process/JSON and test-oracle work; they do not measure
+kernel or onboard execution time. Reproduce the corpora with:
 
 ```sh
 PYTHONPATH=python python3 -m fuzz.drivers.float --mode all --cases 10000 --seed 271828 --output .lake/validation/float
@@ -224,6 +223,11 @@ were executed successfully. Rust's five regression tests, the Lean build's
 The Float counts in the Python and Rust guides describe this same campaign.
 The sampled error supports the native ports' differential validation, separate
 from Lean's universal accuracy theorem.
+
+`make release-check` reproduces both campaigns and records the environment alongside
+the reports. Float provenance includes the shared `ReconstructionKernel.lean`,
+the concrete backends, and the pinned Lean/Lake/Rust dependency files. See the
+[local validation commands](development.md#differential-fuzzing) for report locations.
 
 ## Process timing
 
