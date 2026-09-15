@@ -1,5 +1,5 @@
 import Mathlib.Tactic.Ring
-import Ephemeris.Proofs.Float.CoefficientDecoding
+import Ephemeris.Proofs.CoefficientDecoding
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -13,8 +13,8 @@ covered. No native-decide axiom or hypothetical rounding law is used.
 -/
 
 open Float.Model Float.Model.UnpackedFloat
-namespace Ephemeris.Proofs.Float.Binary64Rounding
-open Ephemeris.Proofs.Float.CoefficientDecoding
+namespace Ephemeris.Proofs.Binary64Rounding
+open Ephemeris.Proofs.CoefficientDecoding
 
 private theorem shift_mantissa (em : ExtendedMantissa) (k : Nat)
     : (em >>> k).mantissa = em.mantissa / 2^k := by
@@ -466,4 +466,4 @@ theorem finite_of_rational (v : Float.Model) (q : Rat)
   change v.unpack.isFinite = true
   cases hu : v.unpack <;> simp_all [Definitions.Binary64Value.unpackedToRational, UnpackedFloat.isFinite]
 
-end Ephemeris.Proofs.Float.Binary64Rounding
+end Ephemeris.Proofs.Binary64Rounding

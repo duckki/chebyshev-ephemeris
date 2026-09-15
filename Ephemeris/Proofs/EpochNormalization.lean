@@ -1,11 +1,11 @@
 import Mathlib.Tactic.Ring
-import Ephemeris.Proofs.Float.Binary64Division
+import Ephemeris.Proofs.Binary64Division
 import Ephemeris.Proofs.Real.PositionReconstruction
 import Mathlib.Tactic.FieldSimp
 
-namespace Ephemeris.Proofs.Float.EpochNormalization
-open Ephemeris.Proofs.Float.CoefficientDecoding
-open Ephemeris.Proofs.Float.Binary64Arithmetic Ephemeris.Proofs.Float.Binary64Division
+namespace Ephemeris.Proofs.EpochNormalization
+open Ephemeris.Proofs.CoefficientDecoding
+open Ephemeris.Proofs.Binary64Arithmetic Ephemeris.Proofs.Binary64Division
 
 theorem normalized_epoch_ticks (m : Message) (time : UInt64)
     (hm : Implementation.Correctness.Message.ValidMessage m)
@@ -125,4 +125,4 @@ theorem normalized_epoch_error (m : Message) (time : UInt64)
       dsimp only [exact] at *
       norm_num at erb esb exb ⊢
       constructor <;> linarith only [erb.1, erb.2, esb.1, esb.2, exb.1, exb.2]
-end Ephemeris.Proofs.Float.EpochNormalization
+end Ephemeris.Proofs.EpochNormalization

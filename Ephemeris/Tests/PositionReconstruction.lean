@@ -4,11 +4,11 @@ import Ephemeris
 Expected values use bit patterns or exact rational test calculations. These are
 runtime/model conformance checks, not proofs of the pending uniform bound. -/
 
-namespace Ephemeris.Tests.Float.PositionReconstruction
+namespace Ephemeris.Tests.PositionReconstruction
 
 private def compare (m : Message) (time : UInt64) : IO Unit := do
   let native :=
-    (Ephemeris.Implementation.Float.PositionReconstruction.evaluate m time).map
+    (Ephemeris.Implementation.PositionReconstruction.evaluate m time).map
       (XYZ.map Float.toBits)
   let modeled :=
     (Implementation.Correctness.Float.modelEvaluate m time).map
@@ -41,7 +41,7 @@ private def run : IO Unit := do
           for offset in [0, 1, duration / 3, duration / 2, duration - 1, duration] do
             let time := Message.startTick m + offset
             compare m time
-            unless (Ephemeris.Implementation.Float.PositionReconstruction.evaluate m
+            unless (Ephemeris.Implementation.PositionReconstruction.evaluate m
                       time).isOk do
               throw (IO.userError "Valid fixed-point query rejected")
             count := count + 1
@@ -55,7 +55,7 @@ private def run : IO Unit := do
         [-limit, -1, 0, 1, limit - 1]
   for value in carrierEdges ++ fieldEdges do
     let q := Int32.ofInt value
-    let actual := Ephemeris.Implementation.Float.PositionReconstruction.coefficient q
+    let actual := Ephemeris.Implementation.PositionReconstruction.coefficient q
     unless actual.toBits == (Implementation.Correctness.Float.modelCoefficient q).toBits
             && Definitions.Binary64Value.floatToRational actual
                 == some ((value : ℚ) / 32) do
@@ -79,7 +79,7 @@ private def run : IO Unit := do
     let time := Message.epochOriginTick + offset
     compare hand time
     let .ok result :=
-      Ephemeris.Implementation.Float.PositionReconstruction.evaluate hand time
+      Ephemeris.Implementation.PositionReconstruction.evaluate hand time
     | throw (IO.userError "Hand polynomial rejected")
     unless result.map Float.toBits
             == (expected.map Float.Model.ofInt).map Float.Model.toBits do
@@ -95,7 +95,7 @@ private def run : IO Unit := do
     ]
   for bad in invalidMessages do
     compare bad (Message.startTick m)
-    unless !(Ephemeris.Implementation.Float.PositionReconstruction.evaluate bad
+    unless !(Ephemeris.Implementation.PositionReconstruction.evaluate bad
               (Message.startTick m)).isOk do
       throw (IO.userError "Invalid message accepted by native evaluator")
     count := count + 1
@@ -107,7 +107,7 @@ private def run : IO Unit := do
         18446744073709551615
       ] do
     compare m time
-    unless Ephemeris.Implementation.Float.PositionReconstruction.evaluate m time
+    unless Ephemeris.Implementation.PositionReconstruction.evaluate m time
             matches .error .outsideValidity do
       throw (IO.userError "Invalid query accepted or wrong error")
     count := count + 1
@@ -115,4 +115,4 @@ private def run : IO Unit := do
 
 #eval run
 
-end Ephemeris.Tests.Float.PositionReconstruction
+end Ephemeris.Tests.PositionReconstruction

@@ -1,6 +1,6 @@
 # Development
 
-Build, format, and reproduce its validation from the repository root. For the algorithm
+Build, format, and reproduce the validation from the repository root. For the algorithm
 and its guarantees, start with the [project introduction](../README.md),
 [specification](paper-and-spec.md), and [Lean proof status](lean-implementation.md#proof-status).
 
@@ -45,8 +45,8 @@ Mathlib downloads stay in the ignored `.lake/mathlib-cache/` directory. Set
 `MATHLIB_CACHE_DIR` to use another location. `make` preserves the dependency
 revisions in the Lake lockfile.
 
-The Lean default targets build both oracle executables, run **836 executable
-checks**, and audit **33 theorem entry points** for unexpected axioms. The
+The Lean default targets build the model/native Float oracle, run **764 executable
+checks**, and audit **27 theorem entry points** for unexpected axioms. The
 [Lean guide](lean-implementation.md#proof-status) describes the proofs and their
 allowed dependencies.
 
@@ -86,7 +86,7 @@ Formatting applies source edits. Review the diff, then run the complete checks.
 make check        # Formatting, linting, Lean build/audit, Python/Rust tests, and docs
 make check-docs   # Check local documentation links and heading anchors offline
 make test         # Lean checks plus Python and Rust regression suites
-make test-python  # Build Lean/Rust oracles and run the 31 Python tests
+make test-python  # Build Lean/Rust oracles and run the 18 Python tests
 make test-rust    # Run the 5 Rust regression tests with locked dependencies
 ```
 
@@ -100,17 +100,17 @@ README and guides. It skips external websites and fenced code examples.
 
 ## Differential fuzzing
 
-The Makefile builds the required oracles and runs fixed, reproducible campaigns:
+The Makefile builds the required oracles and runs a fixed, reproducible Float campaign:
 
 ```sh
-make fuzz-smoke     # Small four-target Float and exact Rational campaigns
-make fuzz-full      # Full recorded Float and Rational campaigns
-make release-check  # Complete checks followed by the full campaigns
+make fuzz-smoke     # Small four-target Float campaign
+make fuzz-full      # Full recorded Float campaign
+make release-check  # Complete checks followed by the full campaign
 ```
 
 The Float targets are the independent Lean Float model, native Lean Float, Python,
 and Rust. Reports and any failure reproducer go under `.lake/validation/` by
 default; set `VALIDATION_DIR` to choose another directory. `environment.txt`
 records the checkout commit, working-tree changes, OS, and Python/Rust/Lean versions.
-The [fuzzing guide](fuzzing.md) covers comparison modes, exact rational
-campaigns, replay, and the recorded validation results.
+The [fuzzing guide](fuzzing.md) covers comparison modes, replay, and the recorded
+validation results.

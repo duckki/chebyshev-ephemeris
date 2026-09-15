@@ -55,7 +55,7 @@ lint-rust:
 
 test: build test-python test-rust
 
-# Python tooling tests invoke both Lean oracles and the release Rust oracle.
+# Python tooling tests invoke the Lean model/native oracle and the release Rust oracle.
 test-python: build build-rust .venv/.dev-tools
 	PYTHONPATH=python .venv/bin/python -m unittest discover -s python/tests -v
 
@@ -73,11 +73,9 @@ validation-info: build .venv/.dev-tools
 
 fuzz-smoke: build build-rust .venv/.dev-tools validation-info
 	PYTHONPATH=python .venv/bin/python -m fuzz.drivers.float --mode all --cases 100 --seed 20260911 --output "$(VALIDATION_DIR)/float"
-	PYTHONPATH=python .venv/bin/python -m fuzz.drivers.rational --cases 100 --seed 20260911 --output "$(VALIDATION_DIR)/rational"
 
 fuzz-full: build build-rust .venv/.dev-tools validation-info
 	PYTHONPATH=python .venv/bin/python -m fuzz.drivers.float --mode all --cases 10000 --seed 271828 --output "$(VALIDATION_DIR)/float"
-	PYTHONPATH=python .venv/bin/python -m fuzz.drivers.rational --cases 3000 --seed 20260911 --seed 314159265 --output "$(VALIDATION_DIR)/rational"
 
 release-check: check fuzz-full
 

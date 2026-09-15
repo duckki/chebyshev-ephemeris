@@ -1,79 +1,15 @@
-"""Batch subprocess clients for the Lean exact/float and Python/Rust float oracles."""
+"""Batch subprocess clients for the Lean model/native and Python/Rust float oracles."""
 
 import os
 import shutil
 import subprocess
 import sys
-from fractions import Fraction
 from pathlib import Path
-from typing import Iterable
 
 import ephemeris
-from ephemeris.message import Message, ReceiverError
 
 from .float_protocol import response as float_response
-from .protocol import (
-    OracleError,
-    _encode_request,
-    _request,
-    exact_response,
-)
-
-
-class LeanOracle:
-    """Run bounded Message/tick queries in batches; return exact rational coordinates.
-
-    Install the executable with `lake build ephemeris_oracle`. An installed Python
-    wheel can use an explicit executable path, EPHEMERIS_ORACLE, or PATH.
-    """
-
-    def __init__(self, executable: str | Path | None = None, *, timeout: float = 30.0):
-        selected = (
-            executable
-            or os.environ.get("EPHEMERIS_ORACLE")
-            or shutil.which("ephemeris_oracle")
-        )
-        if selected is None:
-            selected = (
-                Path(ephemeris.__file__).resolve().parents[2]
-                / ".lake/build/bin/ephemeris_oracle"
-            )
-        self.executable = Path(selected).expanduser().resolve()
-        self.timeout = timeout
-        if not self.executable.is_file():
-            raise OracleError(
-                "Lean oracle not found; build it and set EPHEMERIS_ORACLE"
-            )
-
-    def evaluate_many(
-        self, queries: Iterable[tuple[Message, int]]
-    ) -> list[tuple[Fraction, ...] | ReceiverError]:
-        requests = [_request(m, t) for m, t in queries]
-        if not requests:
-            return []
-        data = "".join(_encode_request(r) + "\n" for r in requests)
-        try:
-            completed = subprocess.run(
-                [str(self.executable)],
-                input=data,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                timeout=self.timeout,
-                check=True,
-            )
-        except (OSError, subprocess.SubprocessError) as exc:
-            raise OracleError(f"Lean oracle execution failed: {exc}") from exc
-        lines = completed.stdout.splitlines()
-        if len(lines) != len(requests):
-            raise OracleError("Lean oracle returned the wrong response count")
-        return [exact_response(line) for line in lines]
-
-    def evaluate(self, message: Message, time: int) -> tuple[Fraction, ...]:
-        result = self.evaluate_many([(message, time)])[0]
-        if isinstance(result, ReceiverError):
-            raise result
-        return result
+from .protocol import OracleError, _encode_request, _request
 
 
 class FloatOracle:

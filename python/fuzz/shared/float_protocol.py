@@ -4,8 +4,8 @@ import json
 import math
 import struct
 
-from ephemeris.float import coefficient, evaluate_float
 from ephemeris.message import Message, ReceiverError, _u64
+from ephemeris.position_reconstruction import coefficient, evaluate_float
 
 from .protocol import OracleError, parse_request
 

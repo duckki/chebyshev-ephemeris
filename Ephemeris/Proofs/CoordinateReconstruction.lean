@@ -1,14 +1,14 @@
 import Mathlib.Tactic.Ring
-import Ephemeris.Proofs.Float.EpochNormalization
+import Ephemeris.Proofs.EpochNormalization
 import Mathlib.Tactic.IntervalCases
 
 /-! Finite ascending coordinate accumulation and the error budget supplied by the
 profile's individual coefficient widths. Loop prefixes track the exact real sum
 and a proved allowance, without adding any arithmetic to the runtime receiver. -/
 
-namespace Ephemeris.Proofs.Float.CoordinateReconstruction
-open Ephemeris.Proofs.Float.CoefficientDecoding Ephemeris.Proofs.Float.EpochNormalization
-open Ephemeris.Proofs.Float.Binary64Arithmetic Ephemeris.Proofs.Float.Binary64Division
+namespace Ephemeris.Proofs.CoordinateReconstruction
+open Ephemeris.Proofs.CoefficientDecoding Ephemeris.Proofs.EpochNormalization
+open Ephemeris.Proofs.Binary64Arithmetic Ephemeris.Proofs.Binary64Division
 
 private noncomputable def coefficientBound (i : Nat) : ℝ :=
   (2 : ℝ)^((Definitions.Message.oneHourCoefficientWidths.getD i 5)-1) / 32
@@ -79,7 +79,7 @@ private theorem coordinate_as_fold (integers : Array Int32) (values : Array Floa
     : Implementation.Correctness.Float.modelCoordinate integers values
       = (List.range 11).foldlM (coordinateStep integers values)
           (Float.Model.ofUInt8 0) := by
-  unfold Implementation.Correctness.Float.modelCoordinate Implementation.Float.ReconstructionKernel.coordinate
+  unfold Implementation.Correctness.Float.modelCoordinate
   simp only [bind_pure, Std.Legacy.Range.forIn_eq_forIn_range',
     Std.Legacy.Range.size, ← List.range_eq_range']
   have hfold := List.forIn_yield_eq_foldlM (m := Option) (l := List.range 11)
@@ -97,7 +97,6 @@ private theorem coordinate_as_fold (integers : Array Int32) (values : Array Floa
   congr 1
   funext product
   simp only [Function.comp_apply]
-  change (Implementation.Correctness.Float.modelFinite (result + product)).bind _ = _
   cases Implementation.Correctness.Float.modelFinite (result + product) <;> rfl
 
 private theorem coordinate_prefix (integers : Array Int32) (values : Array Float.Model)
@@ -222,4 +221,4 @@ theorem coordinate_error (integers : Array Int32) (values : Array Float.Model) (
   · rw [coordinate_as_fold]; exact hr
   · norm_num [termAllowance, coefficientBound, Definitions.Message.oneHourCoefficientWidths, List.range_succ]
 
-end Ephemeris.Proofs.Float.CoordinateReconstruction
+end Ephemeris.Proofs.CoordinateReconstruction

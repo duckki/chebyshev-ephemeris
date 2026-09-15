@@ -17,8 +17,7 @@ the same decoded message. See the [proof details](docs/lean-implementation.md#pr
   exact coefficient decoding, bounded tick arithmetic, floating-point version agreement,
   and the numerical accuracy bound.
 - **Executable receivers:** binary64 implementations in Lean, Python, and Rust,
-  sharing a bounded integer input contract. Lean and Python also provide exact
-  rational reference evaluators.
+  sharing one bounded integer input contract.
 - **Differential validation:** a recorded campaign of **30,464 requests** matched
   output bits and rejection errors across the Lean model, native Lean, Python,
   and Rust. The ports are tested against Lean; their source equivalence is not
@@ -38,7 +37,7 @@ make
 ```
 
 This uses Lean and Mathlib **4.33.1**, fetches the Mathlib build cache, and builds
-the Lean code, including **836 executable checks** and a **33-theorem axiom audit**.
+the Lean code, including **764 executable checks** and a **27-theorem axiom audit**.
 See the [development guide](docs/development.md) for full setup and checks.
 
 ## Explore
@@ -47,7 +46,7 @@ See the [development guide](docs/development.md) for full setup and checks.
 | --- | --- |
 | [Paper and specification](docs/paper-and-spec.md) | Source equations, interpretations, and the decoded-input contract |
 | [Lean](docs/lean-implementation.md) | Implementation structure, theorem statements, and proof status |
-| [Python](docs/python-implementation.md) | Binary64 and rational APIs, usage, and tests |
+| [Python](docs/python-implementation.md) | Binary64 API, usage, and tests |
 | [Rust](docs/rust-implementation.md) | Bounded binary64 API and validation |
 | [Differential fuzzing](docs/fuzzing.md) | Comparison targets, recorded results, and replay |
 | [Development](docs/development.md) | Setup, builds, formatting, linting, and test commands |

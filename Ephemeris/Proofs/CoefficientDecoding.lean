@@ -13,7 +13,7 @@ These establish the native bounded signed-conversion adaptation and exact q/32
 decoding for every Int32. They do not assume a general IEEE roundoff theorem.
 -/
 
-namespace Ephemeris.Proofs.Float.CoefficientDecoding
+namespace Ephemeris.Proofs.CoefficientDecoding
 theorem log2_shift (n k : Nat) (hn : 0 < n) : (n <<< k).log2 = n.log2 + k := by
   induction k with
   | zero => simp
@@ -158,7 +158,7 @@ private theorem model_signedConversion (q : Int32)
 theorem coefficientModelsAgree
     : Ephemeris.Implementation.Correctness.Float.CoefficientModelsAgree := by
   intro q
-  unfold Ephemeris.Implementation.Float.PositionReconstruction.coefficient Ephemeris.Implementation.Correctness.Float.modelCoefficient
+  unfold Ephemeris.Implementation.PositionReconstruction.coefficient Ephemeris.Implementation.Correctness.Float.modelCoefficient
   change _ / (32.0 : Float).toModel = _
   rw [model_signedConversion]
   rfl
@@ -285,4 +285,4 @@ theorem coefficientDecodingExact
   rw [coefficient_rational_value]
   norm_num [Definitions.PositionReconstruction.coefficient, Definitions.Message.coefficientFractionBits]
 
-end Ephemeris.Proofs.Float.CoefficientDecoding
+end Ephemeris.Proofs.CoefficientDecoding

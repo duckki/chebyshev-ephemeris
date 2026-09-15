@@ -1,5 +1,8 @@
 # Ephemeris development workflow
 
+- This is a standalone snapshot repository. Keep validation local; do not add CI
+  or maintenance automation.
+
 - Name modules by their contents, such as `Message` or
   `PositionReconstruction`; avoid vague names such as `Paper` or `Basic`.
 - Keep `Ephemeris/` free of files, with the public `Ephemeris.lean` entry point
@@ -25,32 +28,29 @@
   except unavoidable termination helpers. Definitions must not import Implementation;
   neither layer may import proofs, tests, or oracle tooling. Maintain
   `docs/paper-and-spec.md` for source translations and project requirements.
-- The primary executable implementation is `Implementation/Float/`; the ideal
-  real model lives in Definitions. Optional concrete rational execution and its
-  exact arithmetic helpers live together in `Implementation/Rational/`.
-  These runtime folders must not import each other or `Correctness/`, even
-  transitively. Helpers shared across runtime categories belong at the Implementation
-  root and must not import implementation subdirectories. The shared native/model
-  binary64 reconstruction kernel belongs under `Implementation/Float/`; Rational
-  keeps its own concrete algorithm. The common decoded-input
-  guards are in `Definitions/Message`.
-  Mirror numeric categories in `Proofs/` and `Tests/`; `Proofs/Real/` proves the
-  ideal source interpretation. Shared lemmas and cross-cutting audits stay at
-  their roots. Keep theorem leaf names stable and update qualified references, imports,
-  and source links when reorganizing modules.
+- The executable Lean implementation is `Implementation/PositionReconstruction`.
+  Use concrete native `Float` operations; keep the independent concrete `Float.Model`
+  execution in `Implementation/Correctness/Float`. Do not add generic numeric
+  kernels, backend classes, or a Rational implementation. Duplication between the
+  native implementation and software model is intentional for readability.
+  Runtime code must not import Correctness, proofs, tests, or oracle tooling,
+  even transitively. Common decoded-input guards live in `Definitions/Message`.
+  Native/Float proof modules and executable tests live at the roots of `Proofs/`
+  and `Tests/`; `Proofs/Real/` proves the ideal source interpretation. Keep theorem
+  leaf names stable and update qualified references, imports, and source links
+  when reorganizing modules.
 - Consolidate related declarations into reviewable modules: source field allocation
   and bounded-number interpretations together with the input contract in
   `Definitions/Message`; real equations,
   source loops and the ideal real Message interpretation in
   `Definitions/PositionReconstruction`. Put the independent polynomial semantics
   used as a correctness target in `Implementation/Correctness/Real`. Keep source domains and
-  literal/interpreted formulas in clearly attributed sections. Keep concrete rational
-  runtime code together in `Implementation/Rational/PositionReconstruction`. Keep shared `ReceiverError` in `Definitions/Message`
+  literal/interpreted formulas in clearly attributed sections. Keep shared
+  `ReceiverError` in `Definitions/Message`
   and `XYZ.map` with `XYZ` in `Definitions/Coordinates`.
-  Each runtime category exposes `PositionReconstruction`.
+  The executable receiver lives in `Implementation/PositionReconstruction`.
   In Correctness, keep model execution and native Float contracts together in `Float`,
-  shared accuracy relations in `PositionAccuracy`, and all optional rational
-  interpretation/refinement contracts in `Rational`. Keep `Real` for reviewable
+  and shared accuracy relations in `PositionAccuracy`. Keep `Real` for reviewable
   source-consistency claims and their independent polynomial comparison semantics,
   plus exact query interpretation and checked ideal evaluation. Do not add compatibility
   import aggregators. Match declaration namespaces to module file paths and avoid
@@ -67,12 +67,12 @@
   and `InWindow`. Put validation lemmas, intermediate natural tick helpers,
   and arithmetic-bridge lemmas in `Proofs/Message`. State intermediate lemma
   propositions directly in Proofs, without separate Correctness wrappers;
-  this also applies to error composition and rational loop/validation lemmas. Document planned
+  this also applies to error composition and validation lemmas. Document planned
   upstream quantization in `docs/paper-and-spec.md`; do not add placeholder
   correctness definitions for unimplemented future functionality.
 - Each reconstruction module exposes its own checked `evaluate` beside unchecked
   `reconstruct`. Share `ReceiverError` independently of numeric representation.
-  The ideal Real, optional Rational, and primary Float evaluators share
+  The ideal Real, native Float, and software Float model evaluations share
   `Message.validateQuery` under the authoritative decoded-input contract. Reuse common checks
   when representations permit, and document any changed errors or precedence.
   Do not introduce a separate checked-receiver module. These validation policies
@@ -81,8 +81,9 @@
   bounded integers only: no BigInt/BigRational, Fraction, Decimal, rational input
   normalization, or runtime rational error certificates. Python int values and
   intermediate results must satisfy the same width limits as Rust; do not rely
-  on arbitrary-precision behavior. Keep unbounded arithmetic in Lean source/proof
-  models and test oracles, and in the Python rational reference.
+  on arbitrary-precision behavior. Keep unbounded arithmetic in Lean mathematical
+  models, proofs, and model-oracle execution. Python differential tests use Lean Float.Model as their oracle;
+  do not add a separate Fraction evaluator or sampled rational-error certificate.
 - Refine Lean toward the bounded machine contract before porting native code.
   The authoritative decoded input is specified in `docs/paper-and-spec.md#decoded-input-contract`:
   degree 10, signed fixed-point coefficient integers at scale 2^-5 meters,
@@ -92,20 +93,18 @@
   of this same integer message; do not treat arbitrary float inputs as the primary
   domain or add runtime rational coefficient conversions.
   The required path is the ideal real algorithm to a straightforward binary64
-  implementation with a proved error bound. Rational implementations and further
-  optimizations are optional supporting paths;
-  do not make them prerequisites of the primary specification or native API.
+  implementation with a proved error bound. Keep purpose-specific optimizations
+  separate from the primary specification and native API.
   Model integer overflow, normalization rounding, storage/loop bounds, finite
   inputs/results, and supported-domain success explicitly. Keep ghost radii and
   exact source embeddings in Correctness/Proofs/test tooling, outside Float
-  runtime dependencies. Use native `Float` in `Implementation/Float/`; keep explicit
+  runtime dependencies. Use native `Float` in `Implementation/PositionReconstruction`; keep explicit
   `Float.Model` execution in correctness semantics and oracle/test tooling. The
   runtime evaluator must not call the software model. Its independent oracle must
   execute model operations, not run the native evaluator and convert its output.
-  Native and model backends may instantiate the same binary64 operation schedule;
-  use standard arithmetic typeclasses and local binary64 backend instances, with
-  the model backend in Correctness. Keep the public specializations concrete.
-  Describe this oracle as independent arithmetic execution with shared control flow.
+  Native and model execution have separate concrete normalization and loop
+  definitions. They share the decoded Message and its validation policy.
+  Prove their correspondence operation by operation.
   Prefer logically modeled native conversions; keep any necessary bounded conversion
   adaptation explicit with its correspondence contract. The model's internal
   big-number operations are not instructions to copy into Rust/Python.
@@ -118,16 +117,12 @@
   domain before adapting it. State numeric domains, units, indexing, exceptional
   values, and any inferred interpretation beside the relevant definitions.
   Refine explicitly from real semantics to finite precision with bounded error.
-  The optional Rational evaluator interprets the same Message and UInt64 query;
-  those bounded fixed-point/tick values embed exactly into ℚ and ℝ. Approximating
+  Source algorithm definitions use concrete real arithmetic. Bounded fixed-point
+  coefficients and ticks embed exactly into the real specification. Approximating
   arbitrary upstream reals or rounding arithmetic needs a separate error relation.
-  Source algorithm definitions use concrete real arithmetic. The optional rational
-  implementation uses concrete `ℚ` arithmetic on `Message`, with correctness
-  directly against `Definitions.PositionReconstruction` on the identical Message and tick.
-  It shares the concrete `Message` and `Message.validateQuery` with Float.
-  Use concrete numeric domains in each implementation. Keep proof-only recurrence helpers in
-  `Proofs/Rational`, and keep conversion types explicit,
-  and apply this rule to library/runtime sources too.
+  Rational arithmetic used to interpret binary64 values belongs to the Lean
+  mathematical model and proofs, not a separate reconstruction implementation.
+  Keep conversion types explicit, including interpretations of library sources.
 - Keep optimized or purpose-specific adaptations as separate definitions. State
   their relationship to the source algorithm and prove equivalence on the stated
   domain before claiming a verified replacement. For lossy transformations,
@@ -139,11 +134,10 @@
   correctness statements, assumptions, and proof dependencies remain review inputs.
 - Keep Lean oracle/protocol/benchmark construction in `Ephemeris/FuzzOracle/`
   for light review, and executable regression checks/audits in `Ephemeris/Tests/`.
-- Keep Python numerical implementations together in
-  `python/ephemeris/{rational,float}.py`, with shared `Message`, tick arithmetic,
+- Keep the Python numerical implementation in
+  `python/ephemeris/position_reconstruction.py`, with `Message`, tick arithmetic,
   and validation in `python/ephemeris/message.py`.
-  Both Python evaluators accept the same bounded integer Message and tick;
-  Fraction values are internal to Rational and its outputs, never input fields.
+  The Python evaluator accepts the same bounded integer Message and tick as Lean.
   Put fuzz drivers,
   oracle servers, shared protocol/process/case helpers, and benchmarks under
   `python/fuzz/{drivers,oracles,shared,benchmarks}/`, with regression tests under

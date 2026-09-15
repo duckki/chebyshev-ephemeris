@@ -1,7 +1,7 @@
-"""One bounded decoded Message, tick arithmetic, and validation for both evaluators.
+"""Bounded decoded Message, tick arithmetic, and validation for the Float receiver.
 
-Matches Lean Definitions.Message. Fixed-point integers are inputs; Fraction and
-binary64 values are interpretations used only inside their respective algorithms.
+Matches Lean Definitions.Message. Fixed-point integers are inputs; the receiver
+interprets them as binary64 values during reconstruction.
 """
 
 from dataclasses import dataclass
@@ -33,7 +33,7 @@ def _u64(value: int) -> int:
 
 @dataclass(frozen=True)
 class Message:
-    """Decoded bounded carriers; profile validity is checked by either evaluator.
+    """Decoded bounded carriers; profile validity is checked during evaluation.
 
     Coefficients are signed integer multiples of 1/32 meter. Copy input arrays
     so a caller cannot mutate a validated value during reconstruction.

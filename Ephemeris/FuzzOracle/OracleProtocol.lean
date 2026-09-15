@@ -1,8 +1,8 @@
 import Ephemeris.Definitions.Message
 import Lean.Data.Json
 
-/-! P3 bounded Message/tick parsing and shared errors for the Rational and Float
-oracles. This tested process-boundary code is outside the proved numerical kernel. -/
+/-! P3 bounded Message/tick parsing and errors for the model/native Float oracle.
+This tested process-boundary code is outside the proved numerical kernel. -/
 
 namespace Ephemeris.FuzzOracle.OracleProtocol
 open Lean

@@ -1,4 +1,4 @@
-"""Bounded binary64 receiver matching Lean Implementation.Float (FP1/FP2/FP3).
+"""Bounded binary64 receiver matching Lean Implementation.PositionReconstruction (FP1/FP2/FP3).
 
 A message describes a trajectory segment. evaluate_float returns its XYZ position
 in meters at a UInt64 microsecond Julian-date tick. There is no implicit input

@@ -1,5 +1,5 @@
 import Mathlib.Tactic.Ring
-import Ephemeris.Proofs.Float.EpochNormalization
+import Ephemeris.Proofs.EpochNormalization
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.RootsExtrema
 import Mathlib.Tactic.IntervalCases
 
@@ -7,9 +7,9 @@ import Mathlib.Tactic.IntervalCases
 Chebyshev recurrence. The comparison uses the real source argument, whose interval
 bound supplies Mathlib's |T_i(x)| ≤ 1 theorem. -/
 
-namespace Ephemeris.Proofs.Float.ChebyshevBasis
-open Ephemeris.Proofs.Float.CoefficientDecoding Ephemeris.Proofs.Float.EpochNormalization
-open Ephemeris.Proofs.Float.Binary64Arithmetic Ephemeris.Proofs.Float.Binary64Division
+namespace Ephemeris.Proofs.ChebyshevBasis
+open Ephemeris.Proofs.CoefficientDecoding Ephemeris.Proofs.EpochNormalization
+open Ephemeris.Proofs.Binary64Arithmetic Ephemeris.Proofs.Binary64Division
 
 private def basisValue (x : Float.Model) (values : Array Float.Model) (i : Nat)
     : Option Float.Model :=
@@ -33,7 +33,7 @@ private theorem basis_as_fold (x : Float.Model) (u : ℝ)
     (hx : Definitions.Binary64Value.toReal x = some u)
     : Implementation.Correctness.Float.modelBasis x
       = (List.range 11).foldlM (basisStep x) #[] := by
-  unfold Implementation.Correctness.Float.modelBasis Implementation.Float.ReconstructionKernel.basis
+  unfold Implementation.Correctness.Float.modelBasis
   change (Implementation.Correctness.Float.modelFinite x).bind _ = _
   rw [finite_of_real _ _ hx]
   simp only [Option.bind_eq_bind, Option.bind, bind_pure, Std.Legacy.Range.forIn_eq_forIn_range',
@@ -218,4 +218,4 @@ theorem basis_error (x : Float.Model) (u X : ℝ)
   rw [basis_as_fold x u hx]
   exact basis_prefix x u X hx hX ex 11 (by omega)
 
-end Ephemeris.Proofs.Float.ChebyshevBasis
+end Ephemeris.Proofs.ChebyshevBasis

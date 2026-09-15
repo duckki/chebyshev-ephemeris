@@ -1,14 +1,14 @@
 import Mathlib.Tactic.Ring
-import Ephemeris.Proofs.Float.Binary64Arithmetic
+import Ephemeris.Proofs.Binary64Arithmetic
 
 /-! Exact bounded natural-number conversion and the division used by time
 normalization. This derives bounds from Float.Model.divCore and its rounding
 implementation; the software model stays outside receiver runtime dependencies. -/
 
 open Float.Model Float.Model.UnpackedFloat
-open Ephemeris.Proofs.Float.Binary64Rounding
-namespace Ephemeris.Proofs.Float.Binary64Division
-open Ephemeris.Proofs.Float.Binary64Arithmetic Ephemeris.Proofs.Float.CoefficientDecoding
+open Ephemeris.Proofs.Binary64Rounding
+namespace Ephemeris.Proofs.Binary64Division
+open Ephemeris.Proofs.Binary64Arithmetic Ephemeris.Proofs.CoefficientDecoding
 
 private theorem round_nat_exact (s : Sign) (n : Nat) (hn : 0 < n) (hb : n < 2^53)
     : round Format.binary64 s n 0
@@ -175,4 +175,4 @@ theorem nat_div_error_real (n d : Nat) (hd : 0 < d) (hnd : n ≤ d) (hb : d < 2^
     Rat.cast_zpow, Rat.cast_ofNat]
     using hcast
 
-end Ephemeris.Proofs.Float.Binary64Division
+end Ephemeris.Proofs.Binary64Division

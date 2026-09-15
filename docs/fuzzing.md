@@ -1,25 +1,21 @@
 # Differential fuzzing
 
-This guide defines the shared method, process protocols, and evidence limits.
+This guide defines the comparison method, process protocol, and evidence limits.
 The [Python](python-implementation.md) and [Rust](rust-implementation.md) guides
-cover each port's code, setup, test commands, and results. Read the
+cover each port's code and API. Read the
 [Lean proof status](lean-implementation.md#proof-status) separately: differential
-agreement does not establish a universal correctness or roundoff theorem.
+agreement tests correspondence on sampled inputs; the universal accuracy bound
+is proved in Lean.
 
 ## Targets and comparison modes
 
-The default Lean P3 oracle independently executes `Implementation.Correctness.Float.modelEvaluate`, which uses
-explicit `Float.Model` operations. It does not run native Float and then convert
-the resulting position. The same executable's `--native` mode is a separate
-comparison target that runs `Implementation.Float.PositionReconstruction.evaluate`.
-
-Both backends instantiate the same
-[binary64 kernel](../Ephemeris/Implementation/Float/ReconstructionKernel.lean).
-Their arithmetic executes independently, but normalization, loops, and validation
-share control flow. Comparing them can detect arithmetic/backend disagreement;
-it cannot detect a scheduling mistake shared by both instantiations. The separate
-real specification and accuracy contracts address the algorithm's mathematical
-meaning; see [proof status](lean-implementation.md#proof-status).
+The default Lean P3 oracle independently executes
+`Implementation.Correctness.Float.modelEvaluate` using concrete `Float.Model`
+operations. The same executable's `--native` mode runs
+`Implementation.PositionReconstruction.evaluate` using native `Float`.
+The model and native reconstruction loops have separate concrete definitions;
+both call the decoded Message's validation policy. The model does not run the
+native implementation and convert its result.
 
 | Mode | Targets |
 | --- | --- |
@@ -29,106 +25,96 @@ meaning; see [proof status](lean-implementation.md#proof-status).
 | `lean-rust` | Lean software model and Rust f64 |
 | `pair` | Python float and Rust f64; no Lean calls |
 
-P3 compares every successful result bit and detailed error code. Keeping the
-model comparison catches mistakes that both native ports might share. Pair mode
-can add cheaper native comparison coverage, but it adds no Lean validation.
+P3 compares every successful output bit and rejection code. Keeping the model
+comparison catches mistakes that both native ports might share. Pair mode can add
+cheaper native comparison coverage, but it adds no Lean validation.
 
-The Rational driver compares Python's exact reference with Lean Rational on the
-same bounded Message/tick inputs. Its oracle accepts P3 `evaluate` requests and
-returns exact fractions instead of output bits. The Float normalization and
-accuracy proofs are independent of the optional Rational implementation.
+## Coverage and accuracy
 
-## Coverage and exact targets
-
-The fixed P3 boundary corpus includes each coefficient field's signed limits,
+The fixed boundary corpus includes each coefficient field's signed limits,
 metadata limits, malformed shapes, query endpoints and outside-window values,
 and full Int32 conversion boundaries. Each generated group adds a bounded
 message query, a coefficient-conversion query, and a day-shifted message/query
 with the same relative time. Tests also check wrong protocol types, carrier
 overflow, response shape/finiteness, error precedence, and recovery after bad lines.
 
-An independent rational recurrence in test support evaluates the exact polynomial
-of each successful sampled fixed-point message and query tick. Comparing the
-returned float with that target measures sampled error.
-`--tolerance` defaults to 1e-5 meters, matching the
-proved Lean bound. This campaign tests that threshold on sampled Python/Rust
-outputs; it does not prove a bound for those ports. The report's
-`accuracy_is_formally_proved: false` describes the campaign's evidence, not the
-separate Lean theorem. Reports identify replay runs with their path and zero
-generated cases. Missing binaries, process failures, malformed responses,
-mismatches, and threshold violations fail the run.
-
-The Rational driver generates bounded fixed-point messages, all shared validation
-errors, and exact algebraic properties: day shifts, axis permutations, negation,
-constant translation by 1/32 meter, and Chebyshev parity. Transformations preserve
-the selected field widths; there is no arbitrary-degree or zero-padding expansion.
-It compares exact coordinates and rejection codes. Its reducer retains the original
-mismatch kind; replay fixtures keep integer inputs and exact expected coordinates.
+The Lean software model is the numerical oracle. Lean proves its supported-domain
+success and 10-micrometer per-coordinate bound against the real specification,
+then transfers that bound to native Lean through a correspondence proof. The
+Python/Rust campaigns test matching bits and errors on sampled inputs; they do
+not prove source equivalence for those ports.
+Missing binaries, process failures, malformed responses, and disagreements fail
+the run. Reports identify replay runs by their path and zero generated groups.
 
 ## Run and replay
 
 From the repository root, after [Lean setup](lean-implementation.md#setup):
 
 ```sh
-cargo build --manifest-path rust/Cargo.toml --release --locked
-PYTHONPATH=python python3 -m fuzz.drivers.float --mode all --cases 1000 --seed 20260911 --output .lake/fuzz-layout-check
-PYTHONPATH=python python3 -m fuzz.drivers.rational --cases 1000 --seed 20260911 --output .lake/exact-layout-check
+make fuzz-smoke
+make fuzz-full
 ```
 
-Use a separate output directory per campaign. P3 writes `report.json` with source
-hashes, mode, seed, counts, outcomes, sampled error, and elapsed time. On a mismatch
-it writes the request and backend responses to `failure.json`; the Rational driver also retains
-its minimized reproducer. Replay uses the same driver's artifact format:
+For a custom corpus:
 
 ```sh
-PYTHONPATH=python python3 -m fuzz.drivers.float --mode all --replay DIR/failure.json
-PYTHONPATH=python python3 -m fuzz.drivers.rational --replay DIR/failure.json
+PYTHONPATH=python .venv/bin/python -m fuzz.drivers.float --mode all --cases 1000 --seed 20260911 --output .lake/fuzz-custom
 ```
 
-The Float driver accepts one seed per invocation; Rational permits repeated `--seed` options.
-A report's request count is queries submitted to each selected target, not the
-sum of backend executions. Boundary corpora and repeated seeds overlap, so totals
-from separate campaigns must not be reported as unique coverage without deduplication.
+Use a separate output directory per campaign. The driver writes `report.json`
+with source/executable hashes, mode, seed, counts, outcomes, and elapsed time.
+On a mismatch it writes the request and backend responses to `failure.json`.
+Replay the request with:
+
+```sh
+PYTHONPATH=python .venv/bin/python -m fuzz.drivers.float --mode all --replay DIR/failure.json
+```
+
+The driver accepts one seed per invocation. A report's request count is queries
+submitted to each selected target, not the sum of backend executions. Boundary
+corpora and repeated seeds overlap, so totals from separate campaigns must not be
+reported as unique coverage without deduplication.
 
 ## Tool organization
 
 ```text
 python/
-  ephemeris/{message,float,rational}.py  shared input and numerical code
+  ephemeris/
+    message.py                      bounded input and validation
+    position_reconstruction.py      numerical implementation
   tests/                            regression tests
   fuzz/
-    drivers/{rational,float}.py         campaigns and replay
-    oracles/python_float.py          standalone Python P3 server
+    drivers/float.py                campaigns and replay
+    oracles/python_float.py         standalone Python P3 server
     shared/
       clients.py                    subprocess adapters
-      protocol.py                   shared P3 requests, rational outputs, process errors
-      float_protocol.py             P3 float responses and server adapter
-      cases.py                      bounded rational cases, properties, replay
-      float_cases.py                P3 generators and exact test-only target
-      decimal.py                    exact output integer-string parsing
-    benchmarks/float_processes.py    process timing
+      protocol.py                   P3 requests and process errors
+      float_protocol.py             P3 responses and server adapter
+      float_cases.py                boundary cases and seeded inputs
+      reports.py                    source/executable provenance
+    benchmarks/float_processes.py   process timing
 rust/src/fuzz.rs                     Rust P3 oracle adapter
-Ephemeris/FuzzOracle/                Lean model/oracle construction
+Ephemeris/FuzzOracle/                Lean model/native oracle construction
 ```
 
-`fuzz.shared.clients` exposes `LeanOracle` for Rational and `FloatOracle` for Float.
-P3 backend names are `lean`, `lean-native`, `python`, and `rust`. Oracles consume
-requests; drivers generate and compare them. Neither the numerical Python package
-nor an oracle imports the drivers. The Python server can be used independently:
+`fuzz.shared.clients.FloatOracle` accepts `lean`, `lean-native`, `python`, or `rust`.
+Oracles consume requests; drivers generate and compare them. Neither the numerical
+Python package nor an oracle imports the driver. The Python server can also run
+independently:
 
 ```sh
 PYTHONPATH=python python3 -m fuzz.oracles.python_float
 ```
 
 Clients discover checkout binaries or use explicit paths, `PATH`,
-`EPHEMERIS_ORACLE`, `EPHEMERIS_FLOAT_ORACLE`, and `EPHEMERIS_RUST_ORACLE`.
-`FloatOracle("python")` runs the same installed/check-out package revision in the
-current interpreter. Wheels include the `fuzz` package but no Lean/Rust binaries.
-Drivers also work from an installed wheel outside the checkout. Reports hash available Python
-sources, list unavailable Lean/Rust sources, and record the selected oracle
-commands and executable hashes. In a checkout they additionally hash local
-Lean/Rust sources. A local source hash alone does not show that an externally
-selected oracle binary was built from that source.
+`EPHEMERIS_FLOAT_ORACLE`, and `EPHEMERIS_RUST_ORACLE`. `FloatOracle("python")` runs
+the same installed/check-out package revision in the current interpreter. Wheels
+include the `fuzz` package but no Lean/Rust binaries. The driver also works from
+an installed wheel outside the checkout. Reports hash available Python sources,
+list unavailable Lean/Rust sources, and record the selected oracle commands and
+executable hashes. In a checkout they additionally hash local Lean/Rust sources.
+A local source hash alone does not show that an externally selected oracle binary
+was built from that source.
 
 ## P3 bounded receiver protocol
 
@@ -137,11 +123,11 @@ These project requirements apply to both native ports and the comparison tooling
 | ID | Requirement |
 | --- | --- |
 | P3.1 | Accept FP1 decoded integer fields and the FP3 query tick, with explicit carrier checks at external boundaries. |
-| P3.2 | Follow Lean Float's separately rounded operation order using bounded integers and binary64, without rational normalization or certificates. |
+| P3.2 | Follow Lean Float's separately rounded operation order using bounded integers and binary64. |
 | P3.3 | Preserve FP2 validation errors and precedence; compare successful output bits, including signed zero. |
 | P3.4 | Execute `Implementation.Correctness.Float.modelEvaluate` independently in the default Lean oracle; keep native Lean Float as a separate `--native` target. |
 | P3.5 | Use version 3 JSON lines with bounded integer tokens and output bit strings; malformed data is `invalidProtocol`. Number tokens have no decimal point, exponent, or negative zero. |
-| P3.6 | Compare all native targets against the model, retain replayable requests, and label pair-only coverage separately. Exact rational target arithmetic stays in test tooling. |
+| P3.6 | Compare all native targets against the model, retain replayable requests, and label pair-only coverage separately. |
 
 P3 is a local JSON-line test interface, not satellite serialization. Each line
 produces one response; malformed lines do not end the stream. Integer fields must
@@ -171,71 +157,33 @@ success requires finite values. Nonfinite values and NaN payload propagation are
 not successful output cases. Parsing and process adapters remain tested tooling,
 outside the current Lean proof boundary.
 
-## Rational oracle on P3 inputs
-
-`ephemeris_oracle` accepts the same P3 `evaluate` request as the Float oracles.
-Both Lean adapters use the bounded parser in
-[OracleProtocol](../Ephemeris/FuzzOracle/OracleProtocol.lean). For example:
-
-```json
-{"version":3,"operation":"evaluate","message":{"day_offset":0,"second_of_day":43200,"validity_code":2,"coefficients":[[224,0,0,0,0,0,0,0,0,0,0],[-96,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]},"time":212630486400000000}
-```
-
-Its exact response is
-`{"ok":true,"position":[["7","1"],["-3","1"],["0","1"]]}`.
-Only output coordinates use decimal numerator/denominator string pairs, with
-positive denominators. Inputs are bounded integers throughout. Numerical errors
-and their precedence are identical to Message validation; malformed requests,
-unsupported operations, and carrier overflow return `invalidProtocol`.
-The Rational oracle supports `evaluate` only, not Float's coefficient-bit query.
-
-The stream continues after a bad request. `LeanOracle.evaluate_many` returns
-positions or receiver errors in order; `evaluate` raises numerical rejection.
-Process failures and malformed responses raise `OracleError`. Output integers
-are parsed as strict ASCII decimals without changing interpreter-wide limits.
-Empty batches return an empty list.
-
 ## Recorded campaign
 
-Release validation passed the following reproducible campaigns:
-
-| Campaign | Result |
-| --- | --- |
-| Float, all four targets, seed `271828`, 10,000 generated groups | **30,464 requests** with identical bits/errors; 20,177 successful positions; maximum sampled coordinate error **1.1069938432770927e-8 m** |
-| Rational, seeds `20260911` and `314159265`, 3,000 base cases each | **7,012 exact differential queries** (3,509 + 3,503), including shared validation errors and algebraic properties |
-
-Report timings include process/JSON and test-oracle work; they do not measure
-kernel or onboard execution time. Reproduce the corpora with:
+The release campaign (seed `271828`, 10,000 generated groups) passed **30,464
+requests**, including **20,177 successful positions**, across the Lean model,
+native Lean, Python, and Rust. Every output bit and rejection error agreed.
+Reproduce it, together with all local checks, using:
 
 ```sh
-PYTHONPATH=python python3 -m fuzz.drivers.float --mode all --cases 10000 --seed 271828 --output .lake/validation/float
-PYTHONPATH=python python3 -m fuzz.drivers.rational --cases 3000 --seed 20260911 --seed 314159265 --output .lake/validation/rational
+make release-check
 ```
 
-Reports in those directories record source and executable hashes. The 31 Python
-regressions also check malformed array/number tokens, stream recovery, replay
-counts, finite CLI limits, and installed drivers outside the checkout. A fresh
-wheel ran both drivers outside the checkout using external Lean/Rust binaries;
-its reports are under `.lake/validation/package/`. Python and Rust guide examples
-were executed successfully. Rust's five regression tests, the Lean build's
-836 executable checks, and its 33-entry theorem axiom audit passed.
+Reports under `.lake/validation/float/` record source and executable hashes;
+`environment.txt` beside that directory records the checkout and toolchain versions.
+Provenance covers the concrete native implementation, software model, oracle
+adapters, and pinned dependencies. See the
+[local validation commands](development.md#differential-fuzzing).
 
-The Float counts in the Python and Rust guides describe this same campaign.
-The sampled error supports the native ports' differential validation, separate
-from Lean's universal accuracy theorem.
-
-`make release-check` reproduces both campaigns and records the environment alongside
-the reports. Float provenance includes the shared `ReconstructionKernel.lean`,
-the concrete backends, and the pinned Lean/Lake/Rust dependency files. See the
-[local validation commands](development.md#differential-fuzzing) for report locations.
+The **18 Python tests**, **5 Rust tests**, **764 Lean executable checks**, and
+**27-entry theorem axiom audit** also passed. A clean Python wheel was installed
+outside the checkout and its driver exercised against all four targets. The
+Python/Rust guides report this same campaign, not additional cases.
 
 ## Process timing
-
 
 ```sh
 PYTHONPATH=python python3 -m fuzz.benchmarks.float_processes --cases 1000
 ```
 
-This times Lean-model, Python, and Rust process paths including JSON/startup.
-It does not measure onboard worst-case execution time. Keep performance
-measurements on a fixed corpus separate from coverage counts and accuracy claims.
+This times the Lean-model, Python, and Rust process paths, including JSON and
+startup. It does not measure onboard worst-case execution time.

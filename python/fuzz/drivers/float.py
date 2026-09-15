@@ -1,16 +1,14 @@
-"""Seeded P3 float comparisons; reports distinguish model bits from sampled accuracy."""
+"""Seeded P3 comparisons of Float model/native output bits and rejection errors."""
 
 import argparse
 import json
 import math
 import time
 from collections import Counter
-from fractions import Fraction as Q
 from pathlib import Path
 
 from fuzz.shared.clients import FloatOracle
-from fuzz.shared.float_cases import edge_cases, exact_position, generate
-from fuzz.shared.float_protocol import bits_float
+from fuzz.shared.float_cases import edge_cases, generate
 from fuzz.shared.reports import provenance
 
 
@@ -31,7 +29,6 @@ def run(args):
     args.output.mkdir(parents=True, exist_ok=True)
     started = time.perf_counter()
     outcomes = Counter()
-    max_error = Q(0)
     successes = 0
     for offset in range(0, len(requests), args.batch_size):
         batch = requests[offset : offset + args.batch_size]
@@ -47,40 +44,17 @@ def run(args):
                 raise AssertionError(f"bit/error disagreement; replay {artifact}")
             outcomes["ok" if first["ok"] else first["error"]] += 1
             if first["ok"] and request["operation"] == "evaluate":
-                exact = exact_position(request)
-                observed = tuple(
-                    Q.from_float(bits_float(int(b))) for b in first["result"]
-                )
-                error = max(abs(a - b) for a, b in zip(observed, exact, strict=True))
-                max_error = max(max_error, error)
                 successes += 1
-                if error > Q(str(args.tolerance)):
-                    artifact = args.output / "failure.json"
-                    artifact.write_text(
-                        json.dumps(
-                            {
-                                "request": request,
-                                "responses": row,
-                                "sampled_error_m": float(error),
-                            },
-                            indent=2,
-                        )
-                        + "\n"
-                    )
-                    raise AssertionError(
-                        f"empirical accuracy threshold exceeded; replay {artifact}"
-                    )
     sources = [
         "lean-toolchain",
         "lake-manifest.json",
         "Ephemeris/Definitions/Message.lean",
-        "Ephemeris/Implementation/Float/ReconstructionKernel.lean",
-        "Ephemeris/Implementation/Float/PositionReconstruction.lean",
+        "Ephemeris/Implementation/PositionReconstruction.lean",
         "Ephemeris/Implementation/Correctness/Float.lean",
         "Ephemeris/FuzzOracle/FloatOracle.lean",
         "Ephemeris/FuzzOracle/OracleProtocol.lean",
         "python/ephemeris/message.py",
-        "python/ephemeris/float.py",
+        "python/ephemeris/position_reconstruction.py",
         "rust/src/lib.rs",
         "rust/src/fuzz.rs",
         "rust/Cargo.lock",
@@ -102,9 +76,6 @@ def run(args):
         "backends": names,
         "outcomes": dict(outcomes),
         "successful_positions": successes,
-        "max_sampled_error_m": float(max_error),
-        "empirical_threshold_m": args.tolerance,
-        "accuracy_is_formally_proved": False,
         "elapsed_seconds": time.perf_counter() - started,
         **provenance(
             sources, {name: oracle.command for name, oracle in oracles.items()}
@@ -125,12 +96,6 @@ def main():
     parser.add_argument("--seed", type=int, default=20260911)
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--timeout", type=float, default=60)
-    parser.add_argument(
-        "--tolerance",
-        type=float,
-        default=1e-5,
-        help="empirical test threshold, not a proved bound",
-    )
     parser.add_argument("--output", type=Path, default=Path(".lake/fixed-float-fuzz"))
     parser.add_argument("--replay", type=Path)
     args = parser.parse_args()
@@ -139,8 +104,6 @@ def main():
         or args.batch_size <= 0
         or not math.isfinite(args.timeout)
         or args.timeout <= 0
-        or not math.isfinite(args.tolerance)
-        or args.tolerance < 0
     ):
         parser.error(
             "finite nonnegative limits required, with positive batch size and timeout"

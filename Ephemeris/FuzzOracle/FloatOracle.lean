@@ -3,7 +3,7 @@ import Ephemeris.FuzzOracle.OracleProtocol
 
 /-! P3 JSON-line oracle for the fixed-point receiver. By default it independently
 executes the model functions in Correctness/Float. The explicit --native mode is a separate comparison
-target that executes Implementation/Float/PositionReconstruction. Carrier
+target that executes Implementation/PositionReconstruction. Carrier
 parsing is outside the numerical kernel; profile errors retain their Lean codes. -/
 
 namespace Ephemeris.FuzzOracle.FloatOracle
@@ -19,7 +19,7 @@ private def execute (native : Bool) (j : Json) : Except String Json := do
       let q ← parseCoefficient (← j.getObjVal? "coefficient")
       let value :=
         if native then
-          (Implementation.Float.PositionReconstruction.coefficient q).toModel
+          (Implementation.PositionReconstruction.coefficient q).toModel
         else
           Implementation.Correctness.Float.modelCoefficient q
       return Json.mkObj [("ok", .bool true), ("result", bits value)]
@@ -28,7 +28,7 @@ private def execute (native : Bool) (j : Json) : Except String Json := do
       let time ← boundedNat (← j.getObjVal? "time") 64
       let result :=
         if native then
-          (Implementation.Float.PositionReconstruction.evaluate m time.toUInt64).map
+          (Implementation.PositionReconstruction.evaluate m time.toUInt64).map
             (XYZ.map Float.toModel)
         else
           Implementation.Correctness.Float.modelEvaluate m time.toUInt64

@@ -1,8 +1,7 @@
-"""P3 input generation and independent exact arithmetic for tests only."""
+"""Bounded P3 boundary cases and seeded inputs for differential tests."""
 
 import random
 from copy import deepcopy
-from fractions import Fraction as Q
 
 from ephemeris.message import EPOCH_ORIGIN_TICK, WIDTHS
 
@@ -130,20 +129,3 @@ def generate(seed, count):
             "message": shifted,
             "time": shifted_time,
         }
-
-
-def exact_position(request):
-    """Independent rational interpretation of the same integer message and tick.
-
-    Unbounded arithmetic belongs to this test oracle, never the native float code.
-    """
-    m = request["message"]
-    start, duration = interval(m)
-    x = 2 * Q(request["time"] - start, duration) - 1
-    basis = [Q(1), x]
-    for _ in range(2, 11):
-        basis.append(2 * x * basis[-1] - basis[-2])
-    return tuple(
-        sum(Q(q, 32) * t for q, t in zip(axis, basis, strict=True))
-        for axis in m["coefficients"]
-    )

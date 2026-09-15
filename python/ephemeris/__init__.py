@@ -1,7 +1,6 @@
-"""One bounded ephemeris Message with Float and exact Rational evaluation."""
+"""Bounded binary64 ephemeris reconstruction."""
 
-from .float import evaluate_float
 from .message import Message, ReceiverError
-from .rational import evaluate_exact
+from .position_reconstruction import evaluate_float
 
-__all__ = ["Message", "ReceiverError", "evaluate_float", "evaluate_exact"]
+__all__ = ["Message", "ReceiverError", "evaluate_float"]

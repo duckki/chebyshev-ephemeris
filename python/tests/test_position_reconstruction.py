@@ -4,12 +4,12 @@ import unittest
 from copy import deepcopy
 from dataclasses import replace
 
-from ephemeris.float import coefficient, evaluate_float
 from ephemeris.message import WIDTHS, Message, ReceiverError, duration_ticks, start_tick
+from ephemeris.position_reconstruction import coefficient, evaluate_float
 from fuzz.shared.clients import FloatOracle
 from fuzz.shared.float_cases import edge_cases, fixture, generate
 from fuzz.shared.float_protocol import float_bits, response
-from fuzz.shared.protocol import OracleError
+from fuzz.shared.protocol import OracleError, _encode_request, _request
 
 
 def message():
@@ -17,6 +17,40 @@ def message():
 
 
 class FloatReceiverTests(unittest.TestCase):
+    def test_hand_calculated_quadratic_positions(self):
+        m = Message(
+            0,
+            43200,
+            2,
+            ([96, 64, 32] + [0] * 8, [-32, 0, 64] + [0] * 8, [0, 32, 0] + [0] * 8),
+        )
+        for offset, expected in [
+            (0, (2.0, 1.0, -1.0)),
+            (900000000, (1.5, -2.0, -0.5)),
+            (1800000000, (2.0, -3.0, 0.0)),
+            (3600000000, (6.0, 1.0, 1.0)),
+        ]:
+            with self.subTest(offset=offset):
+                self.assertEqual(
+                    evaluate_float(m, 212630486400000000 + offset), expected
+                )
+
+    def test_constant_and_empty_polynomials(self):
+        m = replace(
+            message(), coefficients=([224] + [0] * 10, [-96] + [0] * 10, [0] * 11)
+        )
+        self.assertEqual(evaluate_float(m, start_tick(m)), (7.0, -3.0, 0.0))
+        with self.assertRaises(ReceiverError) as caught:
+            evaluate_float(replace(m, coefficients=([], [], [])), start_tick(m))
+        self.assertEqual(caught.exception.code, "coefficientCountMismatch")
+
+    def test_bounded_requests_roundtrip(self):
+        m = Message(65535, (1 << 32) - 1, 255, ([0] * 11, [0] * 11, [0] * 11))
+        request = _request(m, (1 << 64) - 1)
+        self.assertEqual(json.loads(_encode_request(request)), request)
+        with self.assertRaises(ValueError):
+            _request(m, 1 << 64)
+
     def test_line_and_inclusive_window(self):
         m = message()
         start = start_tick(m)
@@ -89,6 +123,9 @@ class FloatReceiverTests(unittest.TestCase):
         ]:
             with self.assertRaises(OracleError):
                 response(json.dumps(payload), "evaluate")
+        for text in ["+1", " 1", "1_0", "١", "1.0", "1e1", "--1", "1\n", ""]:
+            with self.subTest(text=text), self.assertRaises(OracleError):
+                response(json.dumps({"ok": True, "result": [text] * 3}), "evaluate")
 
 
 class FloatOracleTests(unittest.TestCase):
@@ -97,6 +134,10 @@ class FloatOracleTests(unittest.TestCase):
         cls.oracles = [
             FloatOracle(name) for name in ["lean", "lean-native", "python", "rust"]
         ]
+
+    def test_empty_batch(self):
+        for oracle in self.oracles:
+            self.assertEqual(oracle.evaluate_many([]), [])
 
     def test_boundaries_and_seeded_cases(self):
         cases = [*edge_cases(), *generate(20260911, 20)]
@@ -114,6 +155,15 @@ class FloatOracleTests(unittest.TestCase):
         q = fixture()
         q["time"] = 1 << 64
         cases.append(q)
+        for field, value in [
+            ("day_offset", 65536),
+            ("second_of_day", 1 << 32),
+            ("validity_code", 256),
+            ("coefficients", [[1 << 31] * 11] * 3),
+        ]:
+            q = fixture()
+            q["message"][field] = value
+            cases.append(q)
         cases.extend(
             {"version": 3, "operation": "coefficient", "coefficient": value}
             for value in [1.0, 1.5, True, None, "1", {}, []]
@@ -153,7 +203,7 @@ class FloatOracleTests(unittest.TestCase):
         bad.append('{"version":3e0,"operation":"coefficient","coefficient":1}')
         good = fixture()
         good["note"] = 'Quoted \\" and \\\\ text: 1e0, -0, 1.0'
-        lines = [*bad, json.dumps(good)]
+        lines = ["not JSON", *bad, json.dumps(good)]
         for oracle in self.oracles:
             with self.subTest(backend=oracle.backend):
                 process = subprocess.run(
@@ -168,7 +218,8 @@ class FloatOracleTests(unittest.TestCase):
                 replies = [json.loads(line) for line in process.stdout.splitlines()]
                 self.assertEqual(len(replies), len(lines))
                 self.assertEqual(
-                    replies[:-1], [{"ok": False, "error": "invalidProtocol"}] * len(bad)
+                    replies[:-1],
+                    [{"ok": False, "error": "invalidProtocol"}] * (len(bad) + 1),
                 )
                 self.assertTrue(replies[-1]["ok"])
 

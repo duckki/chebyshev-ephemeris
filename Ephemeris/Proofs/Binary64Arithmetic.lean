@@ -1,14 +1,14 @@
 import Mathlib.Tactic.Ring
-import Ephemeris.Proofs.Float.Binary64Rounding
+import Ephemeris.Proofs.Binary64Rounding
 
 /-! Finite addition, subtraction, and multiplication bounds for the pinned binary64
 model. Exact rational interpretations occur only in these proofs. Each operation
 constructs a finite result and bounds its error from exact arithmetic. -/
 
 open Float.Model Float.Model.UnpackedFloat
-open Ephemeris.Proofs.Float.Binary64Rounding
-namespace Ephemeris.Proofs.Float.Binary64Arithmetic
-open Ephemeris.Proofs.Float.CoefficientDecoding
+open Ephemeris.Proofs.Binary64Rounding
+namespace Ephemeris.Proofs.Binary64Arithmetic
+open Ephemeris.Proofs.CoefficientDecoding
 
 private theorem unpack_cases (v : Float.Model) (x : Rat)
     (h : Definitions.Binary64Value.toRational v = some x)
@@ -93,11 +93,11 @@ private theorem pack_changed_sign (v : Float.Model) (s t : Sign) (m : Nat) (e : 
   obtain ⟨hm, he, he', hc⟩ := unpack_finite_shape v s m e hp hu
   unfold Definitions.Binary64Value.toRational
   rcases hc with hc | rfl
-  · rw [Ephemeris.Proofs.Float.CoefficientDecoding.unpack_pack_normal t m e hp hc he he']
+  · rw [Ephemeris.Proofs.CoefficientDecoding.unpack_pack_normal t m e hp hc he he']
     rfl
   · by_cases hs : m < 2^52
     · rw [unpack_pack_subnormal t m hp hs]; rfl
-    · rw [Ephemeris.Proofs.Float.CoefficientDecoding.unpack_pack_normal t m (-1074) hp
+    · rw [Ephemeris.Proofs.CoefficientDecoding.unpack_pack_normal t m (-1074) hp
         ((Nat.log2_eq_iff (Nat.ne_of_gt hp)).mpr ⟨by omega, hm⟩) (by omega) (by omega)]
       rfl
 
@@ -281,4 +281,4 @@ theorem mul_error_real (a b : Float.Model) (x y : ℝ) (N : Int)
     Rat.cast_ofNat]
     using hcast
 
-end Ephemeris.Proofs.Float.Binary64Arithmetic
+end Ephemeris.Proofs.Binary64Arithmetic

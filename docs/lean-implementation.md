@@ -1,4 +1,4 @@
-# Lean implementations and correctness
+# Lean implementation and correctness
 
 Review the [paper specification and decoded input](paper-and-spec.md) first.
 The primary path evaluates one `Message` with two arithmetic interpretations:
@@ -18,11 +18,11 @@ contracts are project definitions.
 
 `Ephemeris/` contains only directories; [Ephemeris.lean](../Ephemeris.lean) is the
 public entry point. It imports the primary path and its completed proofs.
-Definitions do not depend on Implementation. Runtime categories do not import
-siblings, Correctness, proofs, or tooling, even transitively. Shared
-input guards live with the contract in Definitions/Message and serve all three
-evaluators. Exact rational arithmetic lives in Rational/PositionReconstruction; relationships live
-in Correctness. There are no per-directory import aggregators.
+Definitions do not depend on Implementation. Native Float runtime code does not
+import Correctness, proofs, or tooling, even transitively. Shared input guards live
+with the contract in Definitions/Message and serve the real specification, native
+Float implementation, and software Float model. There are no per-directory import
+aggregators.
 
 ## Primary implementation and correctness map
 
@@ -32,8 +32,8 @@ under the type namespace (`Message.validateQuery`, `XYZ.map`). Names in the tabl
 are local to the linked module unless qualified.
 
 The final section of Definitions/PositionReconstruction is the non-executable
-ideal Message model; Implementation/Float contains the shared binary64 kernel and
-its native backend. Both the ideal model and native backend expose unchecked
+ideal Message model; Implementation/PositionReconstruction contains the concrete native binary64
+implementation. Both the ideal model and native implementation expose unchecked
 `reconstruct` and checked `evaluate`, accepting `Message` and a `UInt64` query tick.
 `Message.validateQuery` supplies common guards. Real results use `ℝ` and are
 noncomputable mathematical values; Float results use native `Float`.
@@ -42,18 +42,17 @@ noncomputable mathematical values; Float results use native `Float`.
 |---|---|
 | FP1, FP2, FP3 / [Message](../Ephemeris/Definitions/Message.lean) | `Message`; profile constants `coefficientWidths`, `degree`, `frame`; `coefficientFits`, `validate`; bounded `epochOriginTick`, `startTick`, `durationTicks`, `validateQuery` |
 | FP3 / [Ideal real interpretation](../Ephemeris/Definitions/PositionReconstruction.lean), ideal Message section | `coefficient`, `timeToReal`, `referenceDay`, `secondOfDay`, `validityHours`, `coefficients`: exact interpretations of integer fields; `reconstruct`, `evaluate`: source application and shared checks |
-| FP3 / [Binary64 kernel](../Ephemeris/Implementation/Float/ReconstructionKernel.lean) | `Backend`, `finite`, `normalizedEpoch`, `basis`, `coordinate`, `reconstruct`, `evaluate`: shared operation schedule, finite checks, fixed loops, and Message validation; no algebraic laws or proof fields |
-| FP3 / [Float](../Ephemeris/Implementation/Float/PositionReconstruction.lean) | `coefficient` and a local `Backend Float` instance: native conversion and classification; `finite`, `normalizedEpoch`, `basis`, `coordinate`, `reconstruct`, `evaluate`: concrete native wrappers around the shared kernel |
+| FP3 / [Float](../Ephemeris/Implementation/PositionReconstruction.lean) | `coefficient`, `finite`, `normalizedEpoch`, `basis`, `coordinate`, `reconstruct`, `evaluate`: concrete native conversion, finite checks, normalization, loops, and checked evaluation |
 | FP1, FP2, FP3 / [Correctness/Message](../Ephemeris/Implementation/Correctness/Message.lean) | Independent `CoefficientFits`, `ValidMessage`, and exact `InWindow`, used in the Real and Float contracts |
 | N1, FP2, FP3 / [Correctness/Real](../Ephemeris/Implementation/Correctness/Real.lean) | `polynomialBasis`, `polynomialCoordinate`, `polynomialPosition`: independent comparison semantics; loop/polynomial agreement for every normalized argument (`SourceAlgorithmCorrect`), independent Message `position`, checked `EvaluationCorrect`, and `QueryInterpretationCorrect` |
-| FP3 / [Correctness/Float](../Ephemeris/Implementation/Correctness/Float.lean), model execution | `modelCoefficient` and local model instances: software binary64 conversion, literals, and classification; `modelFinite`, `modelNormalizedEpoch`, `modelBasis`, `modelCoordinate`, `modelReconstruct`, `modelEvaluate`: the same kernel instantiated with Float.Model |
+| FP3 / [Correctness/Float](../Ephemeris/Implementation/Correctness/Float.lean), model execution | `modelCoefficient`, `modelFinite`, `modelNormalizedEpoch`, `modelBasis`, `modelCoordinate`, `modelReconstruct`, `modelEvaluate`: independent execution using concrete Float.Model operations |
 | FP3 / [Correctness/Float](../Ephemeris/Implementation/Correctness/Float.lean) | `CoefficientDecodingExact`, `CoefficientModelsAgree`, `EvaluationModelsAgree`, `UniformAccuracy`: model decoding, native/model bits and errors, supported-domain success, and coordinatewise error against real evaluation of the same message/query |
 | N3 / [Correctness/PositionAccuracy](../Ephemeris/Implementation/Correctness/PositionAccuracy.lean) | Shared `RealWithin` and `Binary64Within`: real coordinatewise bounds and finite float output interpretation |
 | FP2 / [Message](../Ephemeris/Definitions/Message.lean) | `ReceiverError`: shared project error codes; each implementation uses its specified subset |
 | Representation helper / [Definitions/Coordinates](../Ephemeris/Definitions/Coordinates.lean) | Componentwise `XYZ.map`; colocated with its record by project layout policy, not attributed to the paper. No arithmetic or message-precision policy. |
 
-The five correctness modules separate active review questions: Message validity,
-Real source consistency, Float execution/accuracy, Rational refinement, and shared
+The four correctness modules separate active review questions: Message validity,
+Real source consistency, Float execution/accuracy, and shared
 PositionAccuracy relations. `Real.lean` compares the paper loops in Definitions
 with an independent polynomial sum.
 `SourceAlgorithmCorrect` states that agreement directly for any normalized
@@ -67,7 +66,7 @@ The public `InWindow` relation contains its exact mathematical interval directly
 so reviewing accepted queries does not require reading proof helpers.
 `CoefficientFits` remains in Correctness because it is part of `ValidMessage`.
 
-The real and rational interpretations derive the epoch origin and fixed-point
+The real interpretation derives the epoch origin and fixed-point
 scales from the published constants in `Definitions.Message`. `ValidMessage`
 uses the published day and validity bit widths. Validation, query interpretation,
 and coefficient-decoding proofs connect the bounded implementation constants to
@@ -105,32 +104,22 @@ the minimum negative value.
 The [model execution](../Ephemeris/Implementation/Correctness/Float.lean) definitions
 execute `Float.Model` operations independently. Their internal big-number operations
 are proof/oracle machinery, not the implementation recipe for Python or Rust.
-There are no runtime error radii in the primary Float evaluator.
 
-The [shared kernel](../Ephemeris/Implementation/Float/ReconstructionKernel.lean)
-parameterizes only the binary64 operation schedule. It reuses Lean's `Add`, `Sub`,
-`Mul`, `Div`, and `OfNat` typeclasses, plus a three-field `Backend` class for decoded
-coefficients, UInt64 conversion, and finiteness. Each concrete module declares a
-local backend instance; the model module also supplies its local numeric-literal
-instance. Public `abbrev` specializations retain concrete Float/Float.Model APIs.
-There are no field/ring assumptions or global backend instances. Inline kernel
-definitions expose the selected operations to native code generation.
-The real source interpretation and optional Rational evaluator remain separate.
-
-The model oracle shares control flow with the native backend while executing
-software arithmetic independently. It does not derive its answer from a native
-result. Shared scheduling errors require the separate mathematical contracts;
-native/model differential agreement alone cannot detect them.
+The native implementation and software model each spell out their normalization,
+loops, and finite checks in their concrete numeric domain. They share only the
+bounded Message and its validation policy. Their separate code is connected by
+an operation-by-operation correspondence proof; the model oracle computes its
+answer without calling the native implementation.
 
 ## Proof status
 
 **The native Float evaluator has proved native/model correspondence, supported-domain
-success, and a 10-micrometer per-coordinate error bound.** The proofs apply to the
-shared binary64 kernel and its concrete backends.
+success, and a 10-micrometer per-coordinate error bound.** The proofs connect the concrete native
+implementation to its software model and the real specification.
 The model accuracy bound is stated directly as an intermediate theorem in
-`Proofs/Float/UniformAccuracy`; `UniformAccuracy` is the public accuracy contract.
+`Proofs/UniformAccuracy`; `UniformAccuracy` is the public accuracy contract.
 
-The [audit](../Ephemeris/Tests/ProofAudit.lean) checks 33 named theorem entry points
+The [audit](../Ephemeris/Tests/ProofAudit.lean) checks 27 named theorem entry points
 and permits only `propext`, `Classical.choice`, and `Quot.sound`. It checks the
 complete axiom dependencies of those declarations. Building a proposition
 definition alone does not prove it.
@@ -157,68 +146,35 @@ quantization, tick-grid approximation, frame/time-scale conversions, and physica
 orbit accuracy are separate obligations. FP4 documents a future quantization policy;
 no quantizer implementation or placeholder Lean contract is included.
 
-[CoefficientDecoding](../Ephemeris/Proofs/Float/CoefficientDecoding.lean) proves
+[CoefficientDecoding](../Ephemeris/Proofs/CoefficientDecoding.lean) proves
 small-integer normalization, normal binary64 packing/unpacking, the bounded signed
 conversion (including Int32 minimum), and exact division by 32. These facts derive
 from the pinned model definitions; no generic rounding axiom or finite enumeration
 of coefficient inputs is used.
 
-[PositionReconstruction](../Ephemeris/Proofs/Float/PositionReconstruction.lean) proves
+[PositionReconstruction](../Ephemeris/Proofs/PositionReconstruction.lean) proves
 primitive correspondence through both loops, all three coordinates, and the shared
 validation branches. It establishes equality of the complete
 native Lean and model results, including errors. This is separate from Python/Rust
 source equivalence.
 
-[UniformAccuracy](../Ephemeris/Proofs/Float/UniformAccuracy.lean) proves the model
+[UniformAccuracy](../Ephemeris/Proofs/UniformAccuracy.lean) proves the model
 bound and transfers it to the native evaluator. Its numerical dependencies are:
 
 | Proof module | Fact or obligation | Status |
 | --- | --- | --- |
-| [Binary64Rounding](../Ephemeris/Proofs/Float/Binary64Rounding.lean) | Conservative one-ulp bounds derived from the pinned model's shifts, rounding, and packing; covers signed zero, subnormals, and mantissa carry | Proved |
-| [Binary64Arithmetic](../Ephemeris/Proofs/Float/Binary64Arithmetic.lean) | Addition, subtraction, and multiplication produce finite results within explicit error bounds when the exact operation meets the stated magnitude limit | Proved |
-| [Binary64Division](../Ephemeris/Proofs/Float/Binary64Division.lean) | Natural integers below 2^53 convert exactly; the normalization quotient has error at most 2^-51 for 0 ≤ n ≤ d < 2^53 and d > 0 | Proved |
-| [EpochNormalization](../Ephemeris/Proofs/Float/EpochNormalization.lean) | Valid tick normalization succeeds, matches the paper's real epoch interpretation within 3·2^-50, and has its real reference in [-1,1] | Proved |
-| [ChebyshevBasis](../Ephemeris/Proofs/Float/ChebyshevBasis.lean) | The eleven-entry loop succeeds; basis error at index i is at most 3^i·2^-43, using Mathlib's real Chebyshev bound | Proved |
-| [CoordinateReconstruction](../Ephemeris/Proofs/Float/CoordinateReconstruction.lean) | Ascending accumulation succeeds; individual coefficient widths bound the total per-axis error by 10^-5 meters | Proved |
+| [Binary64Rounding](../Ephemeris/Proofs/Binary64Rounding.lean) | Conservative one-ulp bounds derived from the pinned model's shifts, rounding, and packing; covers signed zero, subnormals, and mantissa carry | Proved |
+| [Binary64Arithmetic](../Ephemeris/Proofs/Binary64Arithmetic.lean) | Addition, subtraction, and multiplication produce finite results within explicit error bounds when the exact operation meets the stated magnitude limit | Proved |
+| [Binary64Division](../Ephemeris/Proofs/Binary64Division.lean) | Natural integers below 2^53 convert exactly; the normalization quotient has error at most 2^-51 for 0 ≤ n ≤ d < 2^53 and d > 0 | Proved |
+| [EpochNormalization](../Ephemeris/Proofs/EpochNormalization.lean) | Valid tick normalization succeeds, matches the paper's real epoch interpretation within 3·2^-50, and has its real reference in [-1,1] | Proved |
+| [ChebyshevBasis](../Ephemeris/Proofs/ChebyshevBasis.lean) | The eleven-entry loop succeeds; basis error at index i is at most 3^i·2^-43, using Mathlib's real Chebyshev bound | Proved |
+| [CoordinateReconstruction](../Ephemeris/Proofs/CoordinateReconstruction.lean) | Ascending accumulation succeeds; individual coefficient widths bound the total per-axis error by 10^-5 meters | Proved |
 
-All radii and rational interpretations in this analysis are proof machinery.
+The proofs use exact rational interpretations of stored binary64 values and
+real-valued error bounds.
 The bound is stated in `Implementation/Correctness/Float.lean`. The concrete
 rounding bridge is proved directly using Lean's `Float.Model` and Mathlib. No rounding axiom
 or exhaustive enumeration of input messages substitutes for the proof.
-
-## Optional rational reference
-
-[Rational/PositionReconstruction](../Ephemeris/Implementation/Rational/PositionReconstruction.lean)
-uses concrete `ℚ` arithmetic to evaluate the **same `Message` and `UInt64` tick**
-as Real and Float. Its inputs retain degree 10, the selected coefficient widths,
-q/32-meter coefficients, and the shared `Message.validateQuery` checks. There is
-no separate rational input type, arbitrary-degree receiver API, or error policy.
-Rational is optional execution, outside the primary Real/Float import graph.
-
-The fields and tick have exact rational interpretations, so this path needs no
-real-to-rational approximation layer. It computes the full Julian-date mapping
-exactly, following the real source; Float uses bounded elapsed ticks and rounds
-its operations. Rational's unbounded fractions are reference arithmetic, not
-instructions for the shipped Float implementations.
-
-[Correctness/Rational](../Ephemeris/Implementation/Correctness/Rational.lean) has
-two public contracts in the `Ephemeris.Implementation.Correctness.Rational` namespace:
-
-| Contract | Meaning |
-| --- | --- |
-| `ReconstructionCorrect` | Cast the computed rational XYZ to reals: it equals `Definitions.PositionReconstruction.reconstruct` on the identical Message and tick. The unchecked identity also covers totalized division and missing-coefficient defaults outside the accepted domain. |
-| `EvaluationCorrect` | Cast only successful coordinates in the checked result: the entire `Except` equals `Definitions.PositionReconstruction.evaluate`, including every rejection. Rational therefore inherits its supported-domain success and error behavior. |
-
-[Proofs/Rational](../Ephemeris/Proofs/Rational) holds recurrence, loop, and cast
-lemmas. Exact refinement reuses the real source's proof of agreement with
-independent Chebyshev polynomials. The real interval mapping theorem lives
-with the [real proofs](../Ephemeris/Proofs/Real/PositionReconstruction.lean) and
-covers arbitrary real scalar parameters.
-
-The [Python rational port](python-implementation.md#optional-rational-reference)
-also shares the bounded Message with Float. The Rational oracle accepts the same
-P3 `evaluate` requests as the Float oracles; successful outputs are exact fraction
-pairs.
 
 Shared error relations are in
 [PositionAccuracy](../Ephemeris/Implementation/Correctness/PositionAccuracy.lean),
@@ -238,9 +194,9 @@ make
 `make cache` fetches the cache without building the project. Downloads stay in
 the ignored `.lake/mathlib-cache/` directory; set `MATHLIB_CACHE_DIR` to override it.
 Subsequent checks normally need only `lake build`. The default targets include
-836 executable checks: 337 message/tick checks, 394 independent/native/model Float
-checks, 33 stored-binary64 interpretation checks, and 72 optional Rational Message checks.
-They also build the Rational and Float oracles, using the same bounded P3 input schema.
+764 executable checks: 337 message/tick checks, 394 independent/native/model Float
+checks, and 33 stored-binary64 interpretation checks. They also build the Float
+oracle, which provides model execution and a native comparison mode.
 
 See the [development guide](development.md#formatting-and-linting) for the pinned
 LeanFmt dependency, formatting commands, and Lean lint checks.

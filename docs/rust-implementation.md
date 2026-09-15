@@ -10,7 +10,7 @@ outputs with Lean. Native source correspondence is tested, not proved.
 `u32`, and `u8`; coefficients use `i32`; query ticks use `u64`; output is
 `Result<[f64; 3], ReceiverError>`. The input is the same
 [decoded fixed-point message](paper-and-spec.md#decoded-input-contract) used by Lean
-and Python. There are no big-integer or rational-arithmetic dependencies.
+and Python.
 
 The public numerical functions are `evaluate`, `validate_query`, `coefficient`,
 `start_tick`, and `duration_ticks`. Input coefficient vectors admit malformed lengths
@@ -51,8 +51,8 @@ including the minimum i32 value. Keep each floating operation separate: no
 `mul_add`, fast-math, reassociation, or alternative summation without a reviewed
 model change and numerical argument.
 
-Finiteness checks remain executable. There are no runtime radii or budgets;
-Lean proves an offline uniform bound of 10 micrometers per coordinate and
+The receiver checks floating-point intermediates for finiteness.
+Lean proves a uniform bound of 10 micrometers per coordinate and
 success for every supported query. Rust correspondence is supported by code review
 and differential testing. The proof and test scope does not establish deployment-target
 timing, compiler correctness,
@@ -84,7 +84,7 @@ Python or another client without embedding the fuzz driver into the Rust library
 Set `EPHEMERIS_RUST_ORACLE` to use a separately installed binary.
 
 The [shared fuzzing guide](fuzzing.md) covers the comparison modes, boundary cases,
-independent exact target, process protocol, and replay. `pair` runs additional
+model oracle, process protocol, and replay. `pair` runs additional
 Python/Rust comparisons without Lean; do not count those as Lean validation.
 
 ## Results
@@ -96,8 +96,7 @@ malformed protocol/carrier rejection.
 
 Rust participated in the same **30,464-request** P3 campaign reported for Python
 (seed `271828`, 10,000 groups). All four targets agreed on bits and errors. The
-20,177 successful sampled positions had maximum coordinate error
-**1.1069938432770927e-8 m** against the exact recurrence. This is a sampled maximum,
-not the general Float accuracy theorem. The release validation campaign covers all four targets. Its timing includes process/JSON
-overhead and exact test-oracle work; it is not a kernel benchmark or flight timing
-guarantee. See the [campaign record](fuzzing.md#recorded-campaign).
+campaign includes 20,177 successful positions. The 10-micrometer bound is proved
+for Lean; Rust correspondence is supported by differential testing. Campaign timing
+includes process/JSON overhead and model execution; it does not establish kernel
+or onboard execution time. See the [campaign record](fuzzing.md#recorded-campaign).

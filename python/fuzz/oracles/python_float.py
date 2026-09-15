@@ -3,7 +3,7 @@
 import json
 import sys
 
-from ephemeris.float import require_binary64
+from ephemeris.position_reconstruction import require_binary64
 from fuzz.shared.float_protocol import respond
 
 

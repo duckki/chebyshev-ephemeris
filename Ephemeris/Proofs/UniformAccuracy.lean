@@ -1,17 +1,17 @@
-import Ephemeris.Proofs.Float.ChebyshevBasis
-import Ephemeris.Proofs.Float.CoordinateReconstruction
-import Ephemeris.Proofs.Float.PositionReconstruction
+import Ephemeris.Proofs.ChebyshevBasis
+import Ephemeris.Proofs.CoordinateReconstruction
+import Ephemeris.Proofs.PositionReconstruction
 
 /-! Uniform accuracy of the primary bounded binary64 receiver. The bound measures
 arithmetic error against real evaluation of the same decoded message; orbit fitting,
 coefficient quantization, frame selection, and native Python/Rust execution are
 separate from this statement. -/
 
-namespace Ephemeris.Proofs.Float.UniformAccuracy
-open Ephemeris.Proofs.Float.ChebyshevBasis Ephemeris.Proofs.Float.CoefficientDecoding
-      Ephemeris.Proofs.Float.CoordinateReconstruction
-      Ephemeris.Proofs.Float.EpochNormalization
-      Ephemeris.Proofs.Float.PositionReconstruction
+namespace Ephemeris.Proofs.UniformAccuracy
+open Ephemeris.Proofs.ChebyshevBasis Ephemeris.Proofs.CoefficientDecoding
+      Ephemeris.Proofs.CoordinateReconstruction
+      Ephemeris.Proofs.EpochNormalization
+      Ephemeris.Proofs.PositionReconstruction
 
 private theorem reconstruct_success (m : Message) (time : UInt64) (x : Float.Model)
     (values : Array Float.Model) (px py pz : Float.Model)
@@ -28,10 +28,7 @@ private theorem reconstruct_success (m : Message) (time : UInt64) (x : Float.Mod
         = some pz)
     : Implementation.Correctness.Float.modelReconstruct m time
       = some (⟨px, py, pz⟩ : XYZ Float.Model) := by
-  unfold Implementation.Correctness.Float.modelReconstruct Implementation.Float.ReconstructionKernel.reconstruct
-  dsimp only [Implementation.Correctness.Float.modelNormalizedEpoch,
-    Implementation.Correctness.Float.modelBasis,
-    Implementation.Correctness.Float.modelCoordinate] at hn hb hpx hpy hpz
+  unfold Implementation.Correctness.Float.modelReconstruct
   rewrite [Option.bind_eq_bind, hn, Option.bind_some,
     Option.bind_eq_bind, hb, Option.bind_some,
     hpx, Option.bind_some,
@@ -43,8 +40,7 @@ private theorem evaluation_success (m : Message) (time : UInt64) (p : XYZ Float.
     (hquery : Message.validateQuery m time = .ok ())
     (hrec : Implementation.Correctness.Float.modelReconstruct m time = some p)
     : Implementation.Correctness.Float.modelEvaluate m time = .ok p := by
-  unfold Implementation.Correctness.Float.modelEvaluate Implementation.Float.ReconstructionKernel.evaluate
-  dsimp only [Implementation.Correctness.Float.modelReconstruct] at hrec
+  unfold Implementation.Correctness.Float.modelEvaluate
   simp [hquery, hrec]
 
 private theorem source_coordinate_sum (integers : Array Int32)
@@ -114,4 +110,4 @@ complete operation-by-operation correspondence theorem. -/
 theorem uniformAccuracy : Implementation.Correctness.Float.UniformAccuracy (1 / 100000) :=
   uniformAccuracy_of_modelAccuracy _ (by norm_num) modelUniformAccuracy
 
-end Ephemeris.Proofs.Float.UniformAccuracy
+end Ephemeris.Proofs.UniformAccuracy

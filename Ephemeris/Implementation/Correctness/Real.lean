@@ -3,7 +3,7 @@ import Mathlib.RingTheory.Polynomial.Chebyshev
 import Ephemeris.Implementation.Correctness.Message
 
 /-!
-# Consistency of the ideal real specification
+# Consistency of the ideal real number specification
 
 These reviewable statements connect the paper's loops to independent polynomial
 semantics and the decoded Message to its checked real meaning. They validate the
