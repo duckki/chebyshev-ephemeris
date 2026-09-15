@@ -9,9 +9,9 @@ separate from this statement. -/
 
 namespace Ephemeris.Proofs.UniformAccuracy
 open Ephemeris.Proofs.ChebyshevBasis Ephemeris.Proofs.CoefficientDecoding
-      Ephemeris.Proofs.CoordinateReconstruction
-      Ephemeris.Proofs.EpochNormalization
-      Ephemeris.Proofs.PositionReconstruction
+  Ephemeris.Proofs.CoordinateReconstruction
+  Ephemeris.Proofs.EpochNormalization
+  Ephemeris.Proofs.PositionReconstruction
 
 private theorem reconstruct_success (m : Message) (time : UInt64) (x : Float.Model)
     (values : Array Float.Model) (px py pz : Float.Model)

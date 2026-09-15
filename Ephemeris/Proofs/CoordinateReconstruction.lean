@@ -11,10 +11,10 @@ open Ephemeris.Proofs.CoefficientDecoding Ephemeris.Proofs.EpochNormalization
 open Ephemeris.Proofs.Binary64Arithmetic Ephemeris.Proofs.Binary64Division
 
 private noncomputable def coefficientBound (i : Nat) : ℝ :=
-  (2 : ℝ)^((Definitions.Message.oneHourCoefficientWidths.getD i 5)-1) / 32
+  (2 : ℝ) ^ ((Definitions.Message.oneHourCoefficientWidths.getD i 5) - 1) / 32
 
 private noncomputable def termAllowance (i : Nat) : ℝ :=
-  coefficientBound i * ((3 : ℝ)^i * (2 : ℝ)^(-43 : Int)) + 2 * (2 : ℝ)^(-25 : Int)
+  coefficientBound i * ((3 : ℝ) ^ i * (2 : ℝ) ^ (-43 : Int)) + 2 * (2 : ℝ) ^ (-25 : Int)
 
 private theorem coefficient_bound (a : Int32) (i : Nat)
     (ha
@@ -34,11 +34,11 @@ private theorem coefficientBound_nonneg (i : Nat) : 0 ≤ coefficientBound i := 
   positivity
 
 private theorem coefficientBound_le (i : Nat) (hi : i < 11)
-    : coefficientBound i ≤ 2^24 := by
+    : coefficientBound i ≤ 2 ^ 24 := by
   interval_cases i <;> norm_num [coefficientBound, Definitions.Message.oneHourCoefficientWidths]
 
 private theorem weight_prefix_bound (k : Nat) (hk : k ≤ 11)
-    : ((List.range k).map coefficientBound).sum ≤ (2 : ℝ)^25 := by
+    : ((List.range k).map coefficientBound).sum ≤ (2 : ℝ) ^ 25 := by
   interval_cases k <;> norm_num [coefficientBound, Definitions.Message.oneHourCoefficientWidths, List.range_succ]
 
 private theorem allowance_prefix_bound (k : Nat) (hk : k ≤ 11)
@@ -111,7 +111,7 @@ private theorem coordinate_prefix (integers : Array Int32) (values : Array Float
             Definitions.Binary64Value.toReal (values.getD i (Float.Model.ofUInt8 0))
               = some v
             ∧ |v - Definitions.PositionReconstruction.chebyshevT X i|
-              ≤ (3 : ℝ)^i * (2 : ℝ)^(-43 : Int))
+              ≤ (3 : ℝ) ^ i * (2 : ℝ) ^ (-43 : Int))
     (k : Nat) (hk : k ≤ 11)
     : ∃ result r,
         (List.range k).foldlM (coordinateStep integers values) (Float.Model.ofUInt8 0)
@@ -206,7 +206,7 @@ theorem coordinate_error (integers : Array Int32) (values : Array Float.Model) (
             Definitions.Binary64Value.toReal (values.getD i (Float.Model.ofUInt8 0))
               = some v
             ∧ |v - Definitions.PositionReconstruction.chebyshevT X i|
-              ≤ (3 : ℝ)^i * (2 : ℝ)^(-43 : Int))
+              ≤ (3 : ℝ) ^ i * (2 : ℝ) ^ (-43 : Int))
     : ∃ result r,
         Implementation.Correctness.Float.modelCoordinate integers values = some result
         ∧ Definitions.Binary64Value.toReal result = some r
@@ -215,7 +215,7 @@ theorem coordinate_error (integers : Array Int32) (values : Array Float.Model) (
                 fun i =>
                   Definitions.PositionReconstruction.coefficient (integers.getD i 0)
                   * Definitions.PositionReconstruction.chebyshevT X i).sum|
-          ≤ (1 : ℝ)/100000 := by
+          ≤ (1 : ℝ) / 100000 := by
   obtain ⟨result, r, hr, hrval, er⟩ := coordinate_prefix integers values X hT ha hv 11 (by omega)
   refine ⟨result, r, ?_, hrval, le_trans er ?_⟩
   · rw [coordinate_as_fold]; exact hr

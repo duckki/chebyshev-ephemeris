@@ -29,7 +29,7 @@ See `docs/paper-and-spec.md` for the source-to-definition mapping.
 
 namespace Ephemeris.Implementation.Correctness.Real
 open Ephemeris.Definitions.PositionReconstruction
-      Ephemeris.Implementation.Correctness.Message
+  Ephemeris.Implementation.Correctness.Message
 
 /-- B25 Equation (4), represented independently by Mathlib's Chebyshev polynomial
 and polynomial evaluation. This definition does not call the executable recurrence. -/

@@ -164,7 +164,8 @@ private theorem checked_return (check : Except ReceiverError Unit) (value result
     : (check >>= fun _ => pure value) = .ok result ↔ check = .ok () ∧ result = value := by
   cases check with
   | error e => simp [bind, Except.bind]
-  | ok u => cases u; simp [bind, pure, Except.bind, Except.pure, eq_comm]
+  | ok u =>
+      cases u; simp [bind, pure, Except.bind, Except.pure, eq_comm]
 
 theorem evaluationCorrect : Implementation.Correctness.Real.EvaluationCorrect := by
   intro m time result

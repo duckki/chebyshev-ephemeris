@@ -15,7 +15,8 @@ private theorem unpack_cases (v : Float.Model) (x : Rat)
     : (∃ s, v.unpack = .zero s ∧ x = 0)
       ∨ ∃ s m e,
         ∃ hp : 0 < m,
-          v.unpack = .finite s m e hp ∧ x = (s.apply (m : Int) : Rat) * (2 : Rat)^e := by
+          v.unpack = .finite s m e hp
+          ∧ x = (s.apply (m : Int) : Rat) * (2 : Rat) ^ e := by
   cases hu : v.unpack with
   | notANumber =>
       simp [Definitions.Binary64Value.toRational, hu, Definitions.Binary64Value.unpackedToRational] at h
@@ -31,8 +32,8 @@ private theorem unpack_cases (v : Float.Model) (x : Rat)
       simpa [Definitions.Binary64Value.toRational, hu, Definitions.Binary64Value.unpackedToRational] using h.symm
 
 private theorem aligned_value (s : Sign) (m : Nat) (e target : Int) (ht : target ≤ e)
-    : (s.apply ((decreaseExponent m e target).1 : Int) : Rat) * (2 : Rat)^target
-      = (s.apply (m : Int) : Rat) * (2 : Rat)^e := by
+    : (s.apply ((decreaseExponent m e target).1 : Int) : Rat) * (2 : Rat) ^ target
+      = (s.apply (m : Int) : Rat) * (2 : Rat) ^ e := by
   have h := decrease_preserves_value m (e - target).toNat e
   have he : e - ((e - target).toNat : Int) = target := by omega
   rw [he] at h
@@ -47,10 +48,10 @@ with error at most one ulp at that magnitude. Signed zero and subnormals are inc
 theorem add_error (a b : Float.Model) (x y : Rat) (N : Int)
     (ha : Definitions.Binary64Value.toRational a = some x)
     (hb : Definitions.Binary64Value.toRational b = some y) (hN : -1022 ≤ N)
-    (hN' : N ≤ 1022) (hv : |x + y| ≤ (2 : Rat)^N)
+    (hN' : N ≤ 1022) (hv : |x + y| ≤ (2 : Rat) ^ N)
     : ∃ q,
         Definitions.Binary64Value.toRational (a + b) = some q
-        ∧ |q - (x + y)| ≤ (2 : Rat)^(N - 52) := by
+        ∧ |q - (x + y)| ≤ (2 : Rat) ^ (N - 52) := by
   have hpos : 0 ≤ (2 : Rat)^(N-52) := le_of_lt (zpow_pos (by norm_num : (0 : Rat) < 2) _)
   rcases unpack_cases a x ha with ⟨sa, hua, rfl⟩ | ⟨sa, ma, ea, hma, hua, rfl⟩
   · rcases unpack_cases b y hb with ⟨sb, hub, rfl⟩ | ⟨sb, mb, eb, hmb, hub, rfl⟩
@@ -89,7 +90,7 @@ theorem add_error (a b : Float.Model) (x y : Rat) (N : Int)
 private theorem pack_changed_sign (v : Float.Model) (s t : Sign) (m : Nat) (e : Int)
     (hp : 0 < m) (hu : v.unpack = .finite s m e hp)
     : Definitions.Binary64Value.toRational (Float.Model.pack (.finite t m e hp))
-      = some ((t.apply (m : Int) : Rat) * (2 : Rat)^e) := by
+      = some ((t.apply (m : Int) : Rat) * (2 : Rat) ^ e) := by
   obtain ⟨hm, he, he', hc⟩ := unpack_finite_shape v s m e hp hu
   unfold Definitions.Binary64Value.toRational
   rcases hc with hc | rfl
@@ -106,10 +107,10 @@ with error at most one ulp at that magnitude. Signed zero and subnormals are inc
 theorem sub_error (a b : Float.Model) (x y : Rat) (N : Int)
     (ha : Definitions.Binary64Value.toRational a = some x)
     (hb : Definitions.Binary64Value.toRational b = some y) (hN : -1022 ≤ N)
-    (hN' : N ≤ 1022) (hv : |x - y| ≤ (2 : Rat)^N)
+    (hN' : N ≤ 1022) (hv : |x - y| ≤ (2 : Rat) ^ N)
     : ∃ q,
         Definitions.Binary64Value.toRational (a - b) = some q
-        ∧ |q - (x - y)| ≤ (2 : Rat)^(N - 52) := by
+        ∧ |q - (x - y)| ≤ (2 : Rat) ^ (N - 52) := by
   have hpos : 0 ≤ (2 : Rat)^(N-52) := le_of_lt (zpow_pos (by norm_num : (0 : Rat) < 2) _)
   rcases unpack_cases a x ha with ⟨sa, hua, rfl⟩ | ⟨sa, ma, ea, hma, hua, rfl⟩
   · rcases unpack_cases b y hb with ⟨sb, hub, rfl⟩ | ⟨sb, mb, eb, hmb, hub, rfl⟩
@@ -150,10 +151,10 @@ with error at most one ulp at that magnitude. Signed zero and subnormals are inc
 theorem mul_error (a b : Float.Model) (x y : Rat) (N : Int)
     (ha : Definitions.Binary64Value.toRational a = some x)
     (hb : Definitions.Binary64Value.toRational b = some y) (hN : -1022 ≤ N)
-    (hN' : N ≤ 1022) (hv : |x * y| ≤ (2 : Rat)^N)
+    (hN' : N ≤ 1022) (hv : |x * y| ≤ (2 : Rat) ^ N)
     : ∃ q,
         Definitions.Binary64Value.toRational (a * b) = some q
-        ∧ |q - (x * y)| ≤ (2 : Rat)^(N - 52) := by
+        ∧ |q - (x * y)| ≤ (2 : Rat) ^ (N - 52) := by
   have hpos : 0 ≤ (2 : Rat)^(N-52) := le_of_lt (zpow_pos (by norm_num : (0 : Rat) < 2) _)
   rcases unpack_cases a x ha with ⟨sa, hua, rfl⟩ | ⟨sa, ma, ea, hma, hua, rfl⟩
   · rcases unpack_cases b y hb with ⟨sb, hub, rfl⟩ | ⟨sb, mb, eb, hmb, hub, rfl⟩
@@ -225,10 +226,10 @@ theorem finite_of_real (v : Float.Model) (x : ℝ)
 theorem add_error_real (a b : Float.Model) (x y : ℝ) (N : Int)
     (ha : Definitions.Binary64Value.toReal a = some x)
     (hb : Definitions.Binary64Value.toReal b = some y) (hN : -1022 ≤ N) (hN' : N ≤ 1022)
-    (hv : |x + y| ≤ (2 : ℝ)^N)
+    (hv : |x + y| ≤ (2 : ℝ) ^ N)
     : ∃ q : ℝ,
         Definitions.Binary64Value.toReal (a + b) = some q
-        ∧ |q - (x + y)| ≤ (2 : ℝ)^(N - 52) := by
+        ∧ |q - (x + y)| ≤ (2 : ℝ) ^ (N - 52) := by
   obtain ⟨u, hu, rfl⟩ := rational_of_real a x ha
   obtain ⟨v, hv', rfl⟩ := rational_of_real b y hb
   have hbound : |u + v| ≤ (2 : Rat)^N := by
@@ -245,10 +246,10 @@ theorem add_error_real (a b : Float.Model) (x y : ℝ) (N : Int)
 theorem sub_error_real (a b : Float.Model) (x y : ℝ) (N : Int)
     (ha : Definitions.Binary64Value.toReal a = some x)
     (hb : Definitions.Binary64Value.toReal b = some y) (hN : -1022 ≤ N) (hN' : N ≤ 1022)
-    (hv : |x - y| ≤ (2 : ℝ)^N)
+    (hv : |x - y| ≤ (2 : ℝ) ^ N)
     : ∃ q : ℝ,
         Definitions.Binary64Value.toReal (a - b) = some q
-        ∧ |q - (x - y)| ≤ (2 : ℝ)^(N - 52) := by
+        ∧ |q - (x - y)| ≤ (2 : ℝ) ^ (N - 52) := by
   obtain ⟨u, hu, rfl⟩ := rational_of_real a x ha
   obtain ⟨v, hv', rfl⟩ := rational_of_real b y hb
   have hbound : |u - v| ≤ (2 : Rat)^N := by
@@ -265,10 +266,10 @@ theorem sub_error_real (a b : Float.Model) (x y : ℝ) (N : Int)
 theorem mul_error_real (a b : Float.Model) (x y : ℝ) (N : Int)
     (ha : Definitions.Binary64Value.toReal a = some x)
     (hb : Definitions.Binary64Value.toReal b = some y) (hN : -1022 ≤ N) (hN' : N ≤ 1022)
-    (hv : |x * y| ≤ (2 : ℝ)^N)
+    (hv : |x * y| ≤ (2 : ℝ) ^ N)
     : ∃ q : ℝ,
         Definitions.Binary64Value.toReal (a * b) = some q
-        ∧ |q - (x * y)| ≤ (2 : ℝ)^(N - 52) := by
+        ∧ |q - (x * y)| ≤ (2 : ℝ) ^ (N - 52) := by
   obtain ⟨u, hu, rfl⟩ := rational_of_real a x ha
   obtain ⟨v, hv', rfl⟩ := rational_of_real b y hb
   have hbound : |u * v| ≤ (2 : Rat)^N := by

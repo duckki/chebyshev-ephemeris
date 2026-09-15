@@ -102,7 +102,8 @@ private theorem checked_bind (a b : Except ReceiverError Unit)
     : (a >>= fun _ => b) = .ok () ↔ a = .ok () ∧ b = .ok () := by
   cases a with
   | error e => simp [bind, Except.bind]
-  | ok u => cases u; simp [bind, Except.bind]
+  | ok u =>
+      cases u; simp [bind, Except.bind]
 
 theorem queryValidationCorrect
     : ∀ m time,

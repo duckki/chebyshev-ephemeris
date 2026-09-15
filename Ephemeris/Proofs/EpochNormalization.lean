@@ -68,7 +68,7 @@ theorem normalized_epoch_error (m : Message) (time : UInt64)
               (Definitions.PositionReconstruction.secondOfDay m)
               (Definitions.PositionReconstruction.validityHours m)
               (Definitions.PositionReconstruction.timeToReal time)
-          |exact| ≤ 1 ∧ |x - exact| ≤ 3 * (2 : ℝ)^(-50 : Int) := by
+          |exact| ≤ 1 ∧ |x - exact| ≤ 3 * (2 : ℝ) ^ (-50 : Int) := by
   obtain ⟨hs, hd, _, hn, hnd, hb⟩ := Ephemeris.Proofs.Message.tickArithmeticCorrect m time hm ht
   let n := (time - Message.startTick m).toNat
   let d := (Message.durationTicks m).toNat

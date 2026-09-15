@@ -29,8 +29,8 @@ specified coordinatewise error budget relative to an exact real position.
 accuracy contract. -/
 def Binary64Within (value : XYZ Float.Model) (exact : XYZ ℝ) (budget : ℝ) : Prop :=
   match Definitions.Binary64Value.toReal value.x,
-        Definitions.Binary64Value.toReal value.y, Definitions.Binary64Value.toReal
-                                                    value.z with
+        Definitions.Binary64Value.toReal value.y,
+        Definitions.Binary64Value.toReal value.z with
   | some x, some y, some z => RealWithin ⟨x, y, z⟩ exact budget
   | _, _, _ => False
 

@@ -36,7 +36,7 @@ theorem shiftTarget_exact (s : Sign) (m : Nat) (e : Int)
     ExtendedMantissa.accuracy, Accuracy.roundToNearestEven, HShiftRight.hShiftRight,
     Nat.repeat]
 
-private theorem round_small (s : Sign) (n : Nat) (hn : 0 < n) (hb : n < 2^32)
+private theorem round_small (s : Sign) (n : Nat) (hn : 0 < n) (hb : n < 2 ^ 32)
     : round Format.binary64 s n 0
       = .finite s (n <<< (52 - n.log2)) ((n.log2 : Int) - 52)
           (Nat.shiftLeft_pos_iff.mpr hn) := by
@@ -93,7 +93,7 @@ theorem unpack_pack_normal (s : Sign) (m : Nat) (e : Int)
   simp only [hexp, hmant]
   cases s <;> rfl
 
-private theorem model_ofNat_small (n : Nat) (hn : 0 < n) (hb : n < 2^32)
+private theorem model_ofNat_small (n : Nat) (hn : 0 < n) (hb : n < 2 ^ 32)
     : Float.Model.ofNat n
       = Float.Model.pack
           (.finite .positive (n <<< (52 - n.log2)) ((n.log2 : Int) - 52)
@@ -102,7 +102,7 @@ private theorem model_ofNat_small (n : Nat) (hn : 0 < n) (hb : n < 2^32)
   rw [Int.compare_eq_gt.mpr (by omega)]
   simp only [Int.toNat_natCast, round_small _ n hn hb]
 
-private theorem model_ofInt_neg_small (n : Nat) (hn : 0 < n) (hb : n < 2^32)
+private theorem model_ofInt_neg_small (n : Nat) (hn : 0 < n) (hb : n < 2 ^ 32)
     : Float.Model.ofInt (-(n : Int)) = -Float.Model.ofNat n := by
   have hk : n.log2 < 32 := (Nat.log2_lt (Nat.ne_of_gt hn)).mpr hb
   rw [model_ofNat_small n hn hb]
@@ -211,7 +211,8 @@ private theorem div_thirtyTwo (s : Sign) (m : Nat) (e : Int)
   have heq : e - 6 = (e - 5) - 1 := by omega
   rw [heq, round_double s m (e - 5) hp hm (by omega)]
 
-private theorem model_ofInt_signed_small (s : Sign) (n : Nat) (hn : 0 < n) (hb : n < 2^32)
+private theorem model_ofInt_signed_small (s : Sign) (n : Nat) (hn : 0 < n)
+    (hb : n < 2 ^ 32)
     : Float.Model.ofInt (s.apply (n : Int))
       = Float.Model.pack
           (.finite s (n <<< (52 - n.log2)) ((n.log2 : Int) - 52)
@@ -235,7 +236,8 @@ private theorem scaled_coefficient_value (n : Nat) (hk : n.log2 ≤ 52)
   rw [he]
   norm_num [zpow_neg, div_eq_mul_inv]
 
-private theorem coefficient_signed_value (s : Sign) (n : Nat) (hn : 0 < n) (hb : n < 2^32)
+private theorem coefficient_signed_value (s : Sign) (n : Nat) (hn : 0 < n)
+    (hb : n < 2 ^ 32)
     : Definitions.Binary64Value.toRational
         (Float.Model.ofInt (s.apply (n : Int)) / Float.Model.ofUInt8 32)
       = some ((s.apply (n : Int) : Rat) / 32) := by

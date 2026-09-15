@@ -59,7 +59,7 @@ private theorem abs_mul_difference (a b c d : ℝ)
     _ ≤ |(a - c) * b| + |c * (b - d)| := abs_add_le _ _
     _ = _ := by rw [abs_mul, abs_mul]
 
-private theorem abs_near (a b e : ℝ) (h : |a-b| ≤ e) (hb : |b| ≤ 1) : |a| ≤ e + 1 := by
+private theorem abs_near (a b e : ℝ) (h : |a - b| ≤ e) (hb : |b| ≤ 1) : |a| ≤ e + 1 := by
   have := abs_sub_le a b 0
   simp only [sub_zero] at this
   exact le_trans this (add_le_add h hb)
@@ -68,8 +68,8 @@ private theorem recurrence_error (x b c : Float.Model) (u v w X Y Z E F : ℝ)
     (hx : Definitions.Binary64Value.toReal x = some u)
     (hb : Definitions.Binary64Value.toReal b = some v)
     (hc : Definitions.Binary64Value.toReal c = some w) (hX : |X| ≤ 1) (hY : |Y| ≤ 1)
-    (hZ : |Z| ≤ 1) (ex : |u-X| ≤ 3 * (2 : ℝ)^(-50 : Int)) (ey : |v-Y| ≤ E)
-    (ez : |w-Z| ≤ F) (hE : E ≤ 1) (hF : F ≤ 1)
+    (hZ : |Z| ≤ 1) (ex : |u - X| ≤ 3 * (2 : ℝ) ^ (-50 : Int)) (ey : |v - Y| ≤ E)
+    (ez : |w - Z| ≤ F) (hE : E ≤ 1) (hF : F ≤ 1)
     : ∃ q : ℝ,
         (do
           let a ← Implementation.Correctness.Float.modelFinite (Float.Model.ofUInt8 2 * x)
@@ -77,7 +77,7 @@ private theorem recurrence_error (x b c : Float.Model) (u v w X Y Z E F : ℝ)
           Implementation.Correctness.Float.modelFinite (p - c))
           = some ((Float.Model.ofUInt8 2 * x) * b - c)
         ∧ Definitions.Binary64Value.toReal ((Float.Model.ofUInt8 2 * x) * b - c) = some q
-        ∧ |q - (2 * X * Y - Z)| ≤ 2 * E + F + 22 * (2 : ℝ)^(-50 : Int) := by
+        ∧ |q - (2 * X * Y - Z)| ≤ 2 * E + F + 22 * (2 : ℝ) ^ (-50 : Int) := by
   have hu : |u| ≤ 2 := by have := abs_near u X _ ex hX; norm_num at this; linarith only [this]
   have hv : |v| ≤ 2 := le_trans (abs_near v Y E ey hY) (by linarith only [hE])
   have hw : |w| ≤ 2 := le_trans (abs_near w Z F ez hZ) (by linarith only [hF])
@@ -139,7 +139,7 @@ theorem chebyshev_bound (X : ℝ) (hX : |X| ≤ 1) (i : Nat)
 
 private theorem basis_prefix (x : Float.Model) (u X : ℝ)
     (hx : Definitions.Binary64Value.toReal x = some u) (hX : |X| ≤ 1)
-    (ex : |u-X| ≤ 3 * (2 : ℝ)^(-50 : Int)) (k : Nat) (hk : k ≤ 11)
+    (ex : |u - X| ≤ 3 * (2 : ℝ) ^ (-50 : Int)) (k : Nat) (hk : k ≤ 11)
     : ∃ values,
         (List.range k).foldlM (basisStep x) #[] = some values
         ∧ values.size = k
@@ -148,7 +148,7 @@ private theorem basis_prefix (x : Float.Model) (u X : ℝ)
               Definitions.Binary64Value.toReal (values.getD i (Float.Model.ofUInt8 0))
                 = some v
               ∧ |v - Definitions.PositionReconstruction.chebyshevT X i|
-                ≤ (3 : ℝ)^i * (2 : ℝ)^(-43 : Int) := by
+                ≤ (3 : ℝ) ^ i * (2 : ℝ) ^ (-43 : Int) := by
   induction k with
   | zero => exact ⟨#[], rfl, rfl, by omega⟩
   | succ k ih =>
@@ -205,7 +205,7 @@ private theorem basis_prefix (x : Float.Model) (u X : ℝ)
 approximates the real source recurrence. Bounds are conservative and index-dependent. -/
 theorem basis_error (x : Float.Model) (u X : ℝ)
     (hx : Definitions.Binary64Value.toReal x = some u) (hX : |X| ≤ 1)
-    (ex : |u-X| ≤ 3 * (2 : ℝ)^(-50 : Int))
+    (ex : |u - X| ≤ 3 * (2 : ℝ) ^ (-50 : Int))
     : ∃ values,
         Implementation.Correctness.Float.modelBasis x = some values
         ∧ values.size = 11
@@ -214,7 +214,7 @@ theorem basis_error (x : Float.Model) (u X : ℝ)
               Definitions.Binary64Value.toReal (values.getD i (Float.Model.ofUInt8 0))
                 = some v
               ∧ |v - Definitions.PositionReconstruction.chebyshevT X i|
-                ≤ (3 : ℝ)^i * (2 : ℝ)^(-43 : Int) := by
+                ≤ (3 : ℝ) ^ i * (2 : ℝ) ^ (-43 : Int) := by
   rw [basis_as_fold x u hx]
   exact basis_prefix x u X hx hX ex 11 (by omega)
 

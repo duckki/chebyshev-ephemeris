@@ -18,7 +18,7 @@ contracts.
 
 namespace Ephemeris.Implementation.Correctness.Float
 open Ephemeris.Implementation.Correctness.Message
-      Ephemeris.Implementation.Correctness.PositionAccuracy
+  Ephemeris.Implementation.Correctness.PositionAccuracy
 
 ------------------------------------------------------------------------------------------
 -- Concrete Float.Model execution
