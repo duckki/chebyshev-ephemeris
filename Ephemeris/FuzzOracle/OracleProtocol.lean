@@ -1,5 +1,9 @@
-import Ephemeris.Definitions.Message
-import Lean.Data.Json
+module
+
+public import Ephemeris.Definitions.Message
+public import Lean.Data.Json
+
+@[expose] public section
 
 /-! P3 bounded Message/tick parsing and errors for the model/native Float oracle.
 This tested process-boundary code is outside the proved numerical kernel. -/

@@ -1,6 +1,10 @@
-import Mathlib.Tactic.Ring
-import Ephemeris.Proofs.EpochNormalization
-import Mathlib.Tactic.IntervalCases
+module
+
+public import Mathlib.Tactic.Ring
+public import Ephemeris.Proofs.EpochNormalization
+public import Mathlib.Tactic.IntervalCases
+
+@[expose] public section
 
 /-! Finite ascending coordinate accumulation and the error budget supplied by the
 profile's individual coefficient widths. Loop prefixes track the exact real sum

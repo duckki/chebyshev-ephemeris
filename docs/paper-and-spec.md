@@ -64,23 +64,23 @@ that earlier basis entries exist. Defaults do not authorize malformed inputs.
 Likewise, total real division outside the supported interval is not an accepted
 receiver behavior.
 
-Pinned sources (Lean/Mathlib v4.33.1):
-[Mathlib Chebyshev](https://github.com/leanprover-community/mathlib4/blob/v4.33.1/Mathlib/RingTheory/Polynomial/Chebyshev.lean),
-[unpacked constructors](https://github.com/leanprover/lean4/blob/v4.33.1/src/Init/Data/Float/Model/Unpacked/Basic.lean),
-[sign interpretation](https://github.com/leanprover/lean4/blob/v4.33.1/src/Init/Data/Float/Model/Unpacked/Sign.lean),
-[binary64 format](https://github.com/leanprover/lean4/blob/v4.33.1/src/Init/Data/Float/Model/Format/Basic.lean),
-[unpacking](https://github.com/leanprover/lean4/blob/v4.33.1/src/Init/Data/Float/Model/Unpacked/Pack/Basic.lean),
-[Float.Model](https://github.com/leanprover/lean4/blob/v4.33.1/src/Init/Data/Float/Model/Float.lean),
-[native Float boundary](https://github.com/leanprover/lean4/blob/v4.33.1/src/Init/Data/Float/Float.lean),
-[unsigned interpretations](https://github.com/leanprover/lean4/blob/v4.33.1/src/Init/Data/UInt/BasicAux.lean),
-[unsigned arithmetic](https://github.com/leanprover/lean4/blob/v4.33.1/src/Init/Data/UInt/Basic.lean),
-and [signed integers](https://github.com/leanprover/lean4/blob/v4.33.1/src/Init/Data/SInt/Basic.lean).
+Pinned sources (Lean/Mathlib v4.35.0):
+[Mathlib Chebyshev](https://github.com/leanprover-community/mathlib4/blob/v4.35.0/Mathlib/RingTheory/Polynomial/Chebyshev.lean),
+[unpacked constructors](https://github.com/leanprover/lean4/blob/v4.35.0/src/Init/Data/Float/Model/Unpacked/Basic.lean),
+[sign interpretation](https://github.com/leanprover/lean4/blob/v4.35.0/src/Init/Data/Float/Model/Unpacked/Sign.lean),
+[binary64 format](https://github.com/leanprover/lean4/blob/v4.35.0/src/Init/Data/Float/Model/Format/Basic.lean),
+[unpacking](https://github.com/leanprover/lean4/blob/v4.35.0/src/Init/Data/Float/Model/Unpacked/Pack/Basic.lean),
+[Float.Model](https://github.com/leanprover/lean4/blob/v4.35.0/src/Init/Data/Float/Model/Float.lean),
+[native Float boundary](https://github.com/leanprover/lean4/blob/v4.35.0/src/Init/Data/Float/Float.lean),
+[unsigned interpretations](https://github.com/leanprover/lean4/blob/v4.35.0/src/Init/Data/UInt/BasicAux.lean),
+[unsigned arithmetic](https://github.com/leanprover/lean4/blob/v4.35.0/src/Init/Data/UInt/Basic.lean),
+and [signed integers](https://github.com/leanprover/lean4/blob/v4.35.0/src/Init/Data/SInt/Basic.lean).
 Float.Model canonicalizes NaNs; arbitrary NaN payload preservation is not claimed.
-Native Float's basic arithmetic, unsigned conversions, and finite checks have
-logical bodies using that model. Native [signed conversion](https://github.com/leanprover/lean4/blob/v4.33.1/src/Init/Data/SInt/Float.lean)
-is opaque in this version. Our coefficient implementation therefore constructs
+Native Float's basic arithmetic, unsigned conversions, finite checks, and
+[signed conversion](https://github.com/leanprover/lean4/blob/v4.35.0/src/Init/Data/SInt/Float.lean)
+have logical bodies using that model. Our coefficient implementation constructs
 the magnitude with bounded integer operations and uses modeled UInt32.toFloat.
-Literal constants use Lean's [OfScientific definitions](https://github.com/leanprover/lean4/blob/v4.33.1/src/Init/Data/OfScientific.lean).
+Literal constants use Lean's [OfScientific definitions](https://github.com/leanprover/lean4/blob/v4.35.0/src/Init/Data/OfScientific.lean).
 The explicit software specification calls model operations directly; native
 execution is compared with it, not used to implement the oracle.
 
@@ -178,10 +178,10 @@ The `modelCoefficient` definition in `Correctness/Float` uses
 q/32 values are exactly representable in binary64; `CoefficientDecodingExact`
 states that fact and is proved in [CoefficientDecoding](../Ephemeris/Proofs/CoefficientDecoding.lean).
 
-`Implementation/PositionReconstruction` executes native `Float` arithmetic. Lean v4.33.1 defines
-its basic arithmetic and unsigned conversions through `Float.Model` logically,
-while compiled code uses native operations. Its `Int32.toFloat` is opaque, so
-our conversion uses the modeled UInt32 conversion: for negative q, compute
+`Implementation/PositionReconstruction` executes native `Float` arithmetic. Lean v4.35.0 defines
+its basic arithmetic and integer conversions through `Float.Model` logically,
+while compiled code uses native operations. Our conversion explicitly uses
+the modeled UInt32 conversion: for negative q, compute
 `-(q+1)` in Int32, add one in UInt32, convert, and negate the float. Each integer
 step fits even at Int32's minimum. Positive q converts directly; divide by 32.0
 afterward. `CoefficientModelsAgree` specifies correspondence with the direct

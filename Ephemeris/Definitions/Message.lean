@@ -1,6 +1,10 @@
-import Ephemeris.Definitions.Coordinates
-import Init.Data.SInt.Basic
-import Init.Data.Float.Model.Float
+module
+
+public import Ephemeris.Definitions.Coordinates
+public import Init.Data.SInt.Basic
+public import Init.Data.Float.Model.Float
+
+@[expose] public section
 
 /-!
 # Authoritative decoded-message definition
@@ -57,7 +61,7 @@ def oneHourCoefficientWidths : List Nat := [30, 28, 25, 21, 19, 17, 14, 12, 9, 7
 
 /-! ## External machine-number interpretation
 
-Pinned to Lean v4.33.1.
+Pinned to Lean v4.35.0.
 
 Sources: `Init/Data/UInt/BasicAux.lean` (`UInt16.toNat`, `UInt64.toNat`),
 `Init/Data/UInt/Basic.lean` (unsigned arithmetic wraps modulo the type's size),

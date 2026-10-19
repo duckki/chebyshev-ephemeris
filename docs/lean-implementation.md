@@ -98,8 +98,8 @@ basis values, decodes each coefficient as q/32, and accumulates each coordinate
 in increasing index order. Preserve the stated grouping: no fused multiply-add,
 reassociation, or alternative summation without a new numerical argument.
 
-The native signed-conversion helper constructs an unsigned magnitude because
-Lean v4.33.1's `Int32.toFloat` is opaque. Its correspondence with signed model conversion is proved for every Int32, including
+The native signed-conversion helper constructs an unsigned magnitude and uses
+`UInt32.toFloat`. Its correspondence with signed model conversion is proved for every Int32, including
 the minimum negative value.
 The [model execution](../Ephemeris/Implementation/Correctness/Float.lean) definitions
 execute `Float.Model` operations independently. Their internal big-number operations

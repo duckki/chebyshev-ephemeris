@@ -1,11 +1,15 @@
-import Ephemeris.Definitions.Coordinates
-import Mathlib.Data.Real.Basic
-import Init.Data.Float.Model.Float
+module
+
+public import Ephemeris.Definitions.Coordinates
+public import Mathlib.Basic.Real.Basic
+public import Init.Data.Float.Model.Float
+
+@[expose] public section
 
 /-!
 # Value interpretation of Lean's binary64 model
 
-F1: interpretation of the external Lean v4.33.1 `Float.Model` source, not B25.
+F1: interpretation of the external Lean v4.35.0 `Float.Model` source, not B25.
 Sources: `Init/Data/Float/Model/Unpacked/Basic.lean` (constructors),
 `Unpacked/Sign.lean` (`Sign.apply`), `Unpacked/Pack/Basic.lean` (`unpack`), and
 `Float.lean` (`Float.Model.unpack`). See the pinned links in the source map.

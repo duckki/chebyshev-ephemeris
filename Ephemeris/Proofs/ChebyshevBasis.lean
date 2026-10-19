@@ -1,7 +1,11 @@
-import Mathlib.Tactic.Ring
-import Ephemeris.Proofs.EpochNormalization
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.RootsExtrema
-import Mathlib.Tactic.IntervalCases
+module
+
+public import Mathlib.Tactic.Ring
+public import Ephemeris.Proofs.EpochNormalization
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.RootsExtrema
+public import Mathlib.Tactic.IntervalCases
+
+@[expose] public section
 
 /-! Finiteness, array-prefix invariants, and propagated error for the eleven-step
 Chebyshev recurrence. The comparison uses the real source argument, whose interval
@@ -195,7 +199,7 @@ private theorem basis_prefix (x : Float.Model) (u X : ℝ)
         by_cases hik : i < k
         · obtain ⟨w, hw, ew⟩ := hvalues i hik
           refine ⟨w, ?_, ew⟩
-          simpa only [Array.getD_eq_getD_getElem?, Array.getElem?_push, hsize, if_neg (Nat.ne_of_lt hik)] using hw
+          simpa only [Array.getD_eq_getD_getElem?, Array.getElem?_push, hsize, ite_eq_right (Nat.ne_of_lt hik)] using hw
         · have hik : i = k := by omega
           subst i
           refine ⟨v, ?_, ev⟩

@@ -1,4 +1,10 @@
-import Ephemeris.Definitions.Binary64Value
+module
+
+public import Ephemeris.Definitions.Binary64Value
+
+meta import Ephemeris.Definitions.Binary64Value
+
+@[expose] public section
 
 /-!
 # Binary64 value-boundary checks (not arithmetic proofs)

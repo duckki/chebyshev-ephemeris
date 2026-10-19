@@ -1,8 +1,12 @@
-import Ephemeris.Definitions.Message
-import Ephemeris.Definitions.PositionReconstruction
-import Ephemeris.Implementation.PositionReconstruction
-import Ephemeris.Implementation.Correctness.Message
-import Ephemeris.Implementation.Correctness.PositionAccuracy
+module
+
+public import Ephemeris.Definitions.Message
+public import Ephemeris.Definitions.PositionReconstruction
+public import Ephemeris.Implementation.PositionReconstruction
+public import Ephemeris.Implementation.Correctness.Message
+public import Ephemeris.Implementation.Correctness.PositionAccuracy
+
+@[expose] public section
 
 /-!
 # Binary64 Lean model and native Float correctness contracts

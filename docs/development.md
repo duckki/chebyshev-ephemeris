@@ -7,7 +7,7 @@ and its guarantees, start with the [project introduction](../README.md),
 ## Setup
 
 The Lean build requires `make` and Lean's `elan` toolchain manager. The project
-pins Lean and Mathlib to **4.33.1** in [lean-toolchain](../lean-toolchain) and
+pins Lean and Mathlib to **4.35.0** in [lean-toolchain](../lean-toolchain) and
 [lakefile.toml](../lakefile.toml).
 
 For Python/Rust development and the complete test suite, also install:
@@ -28,7 +28,7 @@ creating the environment. Activate `.venv/` for direct Python commands:
 . .venv/bin/activate
 ```
 
-LeanFmt **v0.4.1** is a pinned [Lake dependency](../lakefile.toml), resolved through
+LeanFmt **v0.4.6** is a pinned [Lake dependency](../lakefile.toml), resolved through
 [lake-manifest.json](../lake-manifest.json). Rustfmt and Clippy use the active Rust
 toolchain.
 
@@ -66,7 +66,7 @@ Each target has a language-specific variant:
 | Python | `make format-python` | `make format-check-python` | `make lint-python` |
 | Rust | `make format-rust` | `make format-check-rust` | `make lint-rust` |
 
-- **Lean:** [duckki/leanfmt v0.4.1](https://github.com/duckki/leanfmt/tree/v0.4.1)
+- **Lean:** [duckki/leanfmt v0.4.6](https://github.com/duckki/leanfmt/tree/v0.4.6)
   formats `Ephemeris.lean` and every Lean file under `Ephemeris/`. Both formatting
   targets build imported modules first so LeanFmt can load project syntax.
   Linting uses the Lake build with `warningAsError = true`.

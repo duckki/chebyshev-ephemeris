@@ -1,6 +1,10 @@
-import Ephemeris.Proofs.ChebyshevBasis
-import Ephemeris.Proofs.CoordinateReconstruction
-import Ephemeris.Proofs.PositionReconstruction
+module
+
+public import Ephemeris.Proofs.ChebyshevBasis
+public import Ephemeris.Proofs.CoordinateReconstruction
+public import Ephemeris.Proofs.PositionReconstruction
+
+@[expose] public section
 
 /-! Uniform accuracy of the primary bounded binary64 receiver. The bound measures
 arithmetic error against real evaluation of the same decoded message; orbit fitting,

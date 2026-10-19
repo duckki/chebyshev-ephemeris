@@ -1,5 +1,9 @@
-import Mathlib.Tactic.Ring
-import Ephemeris.Proofs.Binary64Rounding
+module
+
+public import Mathlib.Tactic.Ring
+public import Ephemeris.Proofs.Binary64Rounding
+
+@[expose] public section
 
 /-! Finite addition, subtraction, and multiplication bounds for the pinned binary64
 model. Exact rational interpretations occur only in these proofs. Each operation
@@ -220,7 +224,7 @@ theorem finite_of_real (v : Float.Model) (x : ℝ)
     : Implementation.Correctness.Float.modelFinite v = some v := by
   obtain ⟨q, hq, _⟩ := rational_of_real v x h
   change (if v.isFinite then some v else none) = some v
-  simp only [finite_of_rational v q hq, if_true]
+  simp only [finite_of_rational v q hq, ite_true]
 
 /-- Real-valued form of the concrete binary64 add bound. -/
 theorem add_error_real (a b : Float.Model) (x y : ℝ) (N : Int)

@@ -1,4 +1,10 @@
-import Ephemeris
+module
+
+public import Ephemeris
+
+meta import Ephemeris
+
+@[expose] public section
 
 /-! FP1/FP2/FP3 decoded-input tests. No transport encoding is involved.
 Expected errors and tick coordinates are checked independently of float/model

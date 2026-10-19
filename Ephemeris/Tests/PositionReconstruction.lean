@@ -1,4 +1,10 @@
-import Ephemeris
+module
+
+public import Ephemeris
+
+meta import Ephemeris
+
+@[expose] public section
 
 /-! Native Float compared with independent explicit Float.Model execution.
 Expected values use bit patterns or exact rational test calculations. These are

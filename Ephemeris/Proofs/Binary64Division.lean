@@ -1,5 +1,9 @@
-import Mathlib.Tactic.Ring
-import Ephemeris.Proofs.Binary64Arithmetic
+module
+
+public import Mathlib.Tactic.Ring
+public import Ephemeris.Proofs.Binary64Arithmetic
+
+@[expose] public section
 
 /-! Exact bounded natural-number conversion and the division used by time
 normalization. This derives bounds from Float.Model.divCore and its rounding

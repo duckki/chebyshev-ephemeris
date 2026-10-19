@@ -36,7 +36,7 @@ With Lean's `elan` toolchain manager installed, run from the repository root:
 make
 ```
 
-This uses Lean and Mathlib **4.33.1**, fetches the Mathlib build cache, and builds
+This uses Lean and Mathlib **4.35.0**, fetches the Mathlib build cache, and builds
 the Lean code, including **764 executable checks** and a **27-theorem axiom audit**.
 See the [development guide](docs/development.md) for full setup and checks.
 

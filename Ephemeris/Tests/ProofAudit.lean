@@ -1,6 +1,14 @@
-import Ephemeris.Proofs.ErrorComposition
-import Ephemeris
-import Lean.Util.CollectAxioms
+module
+
+public import Ephemeris.Proofs.ErrorComposition
+public import Ephemeris
+public import Lean.Util.CollectAxioms
+
+meta import Ephemeris.Proofs.ErrorComposition
+meta import Ephemeris
+meta import Lean.Util.CollectAxioms
+
+@[expose] public section
 
 /-! Reject admitted proofs or extra axioms in the real specification and Float refinement. -/
 

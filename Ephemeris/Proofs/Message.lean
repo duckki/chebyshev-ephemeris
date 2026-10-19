@@ -1,5 +1,9 @@
-import Ephemeris.Implementation.Correctness.Message
-import Mathlib.Tactic.NormNum
+module
+
+public import Ephemeris.Implementation.Correctness.Message
+public import Mathlib.Tactic.NormNum
+
+@[expose] public section
 
 /-! Exact integer interpretations of the bounded message arithmetic. -/
 
@@ -117,14 +121,14 @@ theorem queryValidationCorrect
   by_cases hs : time < Ephemeris.Message.startTick m
   · have hs' : time.toNat < startTickNat m := by
       simpa only [UInt64.lt_iff_toNat_lt, startTick_exact] using hs
-    simp only [hs, if_pos, InWindow, reduceCtorEq, false_iff]
+    simp only [hs, ite_eq_left, InWindow, reduceCtorEq, false_iff]
     dsimp [startTickNat] at hs'
     omega
   · have hs' : Ephemeris.Message.startTick m ≤ time := by
       rw [UInt64.le_iff_toNat_le]
       rw [UInt64.lt_iff_toNat_lt] at hs
       omega
-    simp only [hs, if_neg, InWindow, UInt64.lt_iff_toNat_lt,
+    simp only [hs, ite_eq_right, InWindow, UInt64.lt_iff_toNat_lt,
       UInt64.toNat_sub_of_le time _ hs', startTick_exact, durationTicks_exact]
     split_ifs <;> try simp_all only [reduceCtorEq, true_iff, false_iff]
     all_goals have := hs'

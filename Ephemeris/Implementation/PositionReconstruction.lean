@@ -1,5 +1,9 @@
-import Init.Data.Float.Float
-import Ephemeris.Definitions.Message
+module
+
+public import Init.Data.Float.Float
+public import Ephemeris.Definitions.Message
+
+@[expose] public section
 
 /-! FP3: native binary64 evaluation of the authoritative fixed-point Message.
 Conversions, normalization, and reconstruction loops use concrete Float operations.
@@ -9,7 +13,7 @@ namespace Ephemeris.Implementation.PositionReconstruction
 
 /-- FP3: exact coefficient decoding for these signed integer widths. -/
 def coefficient (q : Int32) : Float :=
-  -- Int32.toFloat is opaque in Lean v4.33.1. UInt32.toFloat has a logical model.
+  -- Construct the signed value explicitly through modeled UInt32.toFloat.
   -- For q < 0, -(q+1) fits Int32 even at its minimum; +1 then fits UInt32.
   let value := if q < 0 then -((-(q + 1)).toUInt32 + 1).toFloat else q.toUInt32.toFloat
   value / 32.0

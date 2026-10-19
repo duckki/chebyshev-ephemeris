@@ -1,5 +1,9 @@
-import Ephemeris.Implementation.Correctness.Real
-import Ephemeris.Proofs.Message
+module
+
+public import Ephemeris.Implementation.Correctness.Real
+public import Ephemeris.Proofs.Message
+
+@[expose] public section
 
 /-! Consistency of the real source model.
 This checks source loops against independent polynomial semantics. The separate Float proof establishes its roundoff bound. -/

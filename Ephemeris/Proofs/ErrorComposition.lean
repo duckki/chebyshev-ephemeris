@@ -1,4 +1,8 @@
-import Ephemeris.Implementation.Correctness.PositionAccuracy
+module
+
+public import Ephemeris.Implementation.Correctness.PositionAccuracy
+
+@[expose] public section
 
 namespace Ephemeris.Proofs.ErrorComposition
 

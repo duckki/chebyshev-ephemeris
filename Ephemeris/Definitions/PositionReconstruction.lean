@@ -1,6 +1,10 @@
-import Ephemeris.Definitions.Coordinates
-import Ephemeris.Definitions.Message
-import Mathlib.Data.Real.Basic
+module
+
+public import Ephemeris.Definitions.Coordinates
+public import Ephemeris.Definitions.Message
+public import Mathlib.Basic.Real.Basic
+
+@[expose] public section
 
 /-!
 # Real source equations and decoded-message reconstruction

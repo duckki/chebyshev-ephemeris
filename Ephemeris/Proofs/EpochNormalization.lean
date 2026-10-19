@@ -1,7 +1,11 @@
-import Mathlib.Tactic.Ring
-import Ephemeris.Proofs.Binary64Division
-import Ephemeris.Proofs.Real.PositionReconstruction
-import Mathlib.Tactic.FieldSimp
+module
+
+public import Mathlib.Tactic.Ring
+public import Ephemeris.Proofs.Binary64Division
+public import Ephemeris.Proofs.Real.PositionReconstruction
+public import Mathlib.Tactic.FieldSimp
+
+@[expose] public section
 
 namespace Ephemeris.Proofs.EpochNormalization
 open Ephemeris.Proofs.CoefficientDecoding

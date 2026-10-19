@@ -1,6 +1,10 @@
-import Ephemeris.Definitions.PositionReconstruction
-import Mathlib.RingTheory.Polynomial.Chebyshev
-import Ephemeris.Implementation.Correctness.Message
+module
+
+public import Ephemeris.Definitions.PositionReconstruction
+public import Mathlib.RingTheory.Polynomial.Chebyshev
+public import Ephemeris.Implementation.Correctness.Message
+
+@[expose] public section
 
 /-!
 # Consistency of the ideal real number specification

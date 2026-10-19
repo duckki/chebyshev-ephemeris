@@ -1,4 +1,8 @@
-import Ephemeris.Proofs.CoefficientDecoding
+module
+
+public import Ephemeris.Proofs.CoefficientDecoding
+
+@[expose] public section
 
 /-! Complete native/model correspondence for coefficients, normalization, both loops,
 and checked evaluation. This does not establish a real rounding bound. -/

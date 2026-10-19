@@ -1,5 +1,9 @@
-import Ephemeris.Definitions.Message
-import Mathlib.Data.Int.Basic
+module
+
+public import Ephemeris.Definitions.Message
+public import Mathlib.Data.Int.Basic
+
+@[expose] public section
 
 /-! FP1/FP2/FP3: independent validity and query meaning for the sole Message.
 These domain predicates appear in the Real and Float contracts. Proof-only

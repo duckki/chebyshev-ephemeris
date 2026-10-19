@@ -1,5 +1,9 @@
-import Ephemeris.Implementation.Correctness.Float
-import Ephemeris.FuzzOracle.OracleProtocol
+module
+
+public import Ephemeris.Implementation.Correctness.Float
+public import Ephemeris.FuzzOracle.OracleProtocol
+
+public section
 
 /-! P3 JSON-line oracle for the fixed-point receiver. By default it independently
 executes the model functions in Correctness/Float. The explicit --native mode is a separate comparison

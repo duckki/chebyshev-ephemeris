@@ -1,6 +1,10 @@
-import Ephemeris.Definitions.Coordinates
-import Mathlib.Data.Real.Basic
-import Ephemeris.Definitions.Binary64Value
+module
+
+public import Ephemeris.Definitions.Coordinates
+public import Mathlib.Basic.Real.Basic
+public import Ephemeris.Definitions.Binary64Value
+
+@[expose] public section
 
 /-!
 # Shared real and binary64 position accuracy relations

@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 /-!
 # Source coordinate components and frame families
 
